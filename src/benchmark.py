@@ -2,12 +2,11 @@ import sys
 from encoder import NQueensEncoder
 from solver import SATSolverWrapper
 
-# Ép console Windows dùng utf-8 khi print tiếng Việt
 sys.stdout.reconfigure(encoding='utf-8')
 
 def run_benchmark():
     n = 8
-    encoding_methods = ["binomial", "sequential"]
+    encoding_methods = ["binomial", "sequential", "binary"]
     
     print(f"--- Đang test thuật toán với N = {n} ---")
     
@@ -20,7 +19,7 @@ def run_benchmark():
         
         print(f"[{enc_name.capitalize():>10}] Số biến: {num_vars:<5} | Mệnh đề: {len(clauses):<5} | SAT: {is_sat} | T.gian: {runtime:.6f}s")
         
-    # TODO: Cần viết thêm Binary, Commander, Product...
+    # TODO: Cần viết thêm Commander, Product...
     # TODO: Viết vòng lặp test nhiều N và lưu kết quả ra file CSV
 
 if __name__ == "__main__":

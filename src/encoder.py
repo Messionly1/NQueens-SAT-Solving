@@ -27,7 +27,6 @@ class NQueensEncoder:
         if len(lits) <= 1:
             return []
         clauses = []
-        # Cần k - 1 biến phụ
         S = self.get_new_vars(len(lits) - 1)
         
         clauses.append([-lits[0], S[0]])
@@ -38,13 +37,29 @@ class NQueensEncoder:
         clauses.append([-lits[-1], -S[-1]])
         return clauses
 
+    def encode_amo_binary(self, lits):
+        if len(lits) <= 1:
+            return []
+        m = math.ceil(math.log2(len(lits)))
+        V = self.get_new_vars(m)
+        clauses = []
+        for i, lit in enumerate(lits):
+            b = format(i, f'0{m}b')
+            for j in range(m):
+                if b[j] == '1':
+                    clauses.append([-lit, V[j]])
+                else:
+                    clauses.append([-lit, -V[j]])
+        return clauses
+
     def generate_clauses(self, enc_type="binomial"):
         clauses = []
         n = self.n
         
         amo_func = {
             "binomial": self.encode_amo_binomial,
-            "sequential": self.encode_amo_sequential
+            "sequential": self.encode_amo_sequential,
+            "binary": self.encode_amo_binary
         }[enc_type]
 
         for r in range(n):
