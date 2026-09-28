@@ -52,6 +52,48 @@ class NQueensEncoder:
                     clauses.append([-lit, -V[j]])
         return clauses
 
+    def encode_amo_commander(self, lits):
+        if len(lits) <= 4:
+            return self.encode_amo_binomial(lits)
+        
+        group_size = math.ceil(math.sqrt(len(lits)))
+        groups = [lits[i:i + group_size] for i in range(0, len(lits), group_size)]
+        commanders = self.get_new_vars(len(groups))
+        
+        clauses = []
+        clauses.extend(self.encode_amo_binomial(commanders))
+        
+        for i, group in enumerate(groups):
+            c = commanders[i]
+            clauses.append([-c] + group)
+            clauses.extend(self.encode_amo_binomial(group))
+            for lit in group:
+                clauses.append([-lit, c])
+                
+        return clauses
+
+    def encode_amo_product(self, lits):
+        if len(lits) <= 4:
+            return self.encode_amo_binomial(lits)
+        
+        p = math.ceil(math.sqrt(len(lits)))
+        q = math.ceil(len(lits) / p)
+        
+        R = self.get_new_vars(p)
+        C = self.get_new_vars(q)
+        
+        clauses = []
+        clauses.extend(self.encode_amo_binomial(R))
+        clauses.extend(self.encode_amo_binomial(C))
+        
+        for i, lit in enumerate(lits):
+            r_idx = i // q
+            c_idx = i % q
+            clauses.append([-lit, R[r_idx]])
+            clauses.append([-lit, C[c_idx]])
+            
+        return clauses
+
     def generate_clauses(self, enc_type="binomial"):
         clauses = []
         n = self.n
@@ -59,7 +101,9 @@ class NQueensEncoder:
         amo_func = {
             "binomial": self.encode_amo_binomial,
             "sequential": self.encode_amo_sequential,
-            "binary": self.encode_amo_binary
+            "binary": self.encode_amo_binary,
+            "commander": self.encode_amo_commander,
+            "product": self.encode_amo_product
         }[enc_type]
 
         for r in range(n):
