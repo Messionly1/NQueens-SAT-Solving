@@ -1,0 +1,29 @@
+# Môi trường ảo (Virtual Environments)
+venv/
+env/
+.venv/
+
+# File tạm và cache của Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# File cấu hình của các IDE/Editor (VS Code, PyCharm...)
+.vscode/
+.idea/
+*.swp
+
+# File rác của hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Các file tạm được sinh ra trong quá trình biên dịch LaTeX (dành cho phần Báo cáo sau này)
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
+report/*.bbl
+report/*.blg
