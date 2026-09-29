@@ -19,7 +19,7 @@ Ngoài ra, dự án tích hợp bộ giải **CP-SAT** từ thư viện Google O
 
 ## 📊 Kết quả Thực nghiệm
 
-Dự án cung cấp công cụ benchmark tự động chạy từ $N=10$ đến $N=30$.
+Dự án cung cấp công cụ benchmark tự động chạy từ $N=10$ đến $N=30$. Mỗi cấu hình được chạy lặp lại **3 lần** và lấy giá trị trung bình nhằm loại bỏ nhiễu đo lường. Thời gian được tách thành hai thành phần riêng biệt: **thời gian sinh mệnh đề** (`Gen_Time`) và **thời gian giải** (`Solve_Time`). Nghiệm đầu ra của mọi encoding SAT đều được **hậu kiểm độc lập** (`Solution_Valid`) để đảm bảo đúng $N$ quân và không tấn công nhau.
 
 ### 1. Sự bùng nổ mệnh đề (Clause Explosion)
 Chuẩn Binomial phình to bộ nhớ cực nhanh theo hàm bậc hai, trong khi Sequential và Product giữ được số lượng mệnh đề rất nhỏ gọn nhờ các biến phụ.
@@ -27,7 +27,9 @@ Chuẩn Binomial phình to bộ nhớ cực nhanh theo hàm bậc hai, trong khi
 ![Clauses Comparison](results/chart_clauses_comparison.png)
 
 ### 2. Nghịch lý Thời gian giải (Runtime Bottleneck)
-Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới hơn 20 giây ở $N=30$. Ngược lại, Binomial không có biến phụ lại giải cực nhanh (0.04s). Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian sát mức 0 giây.
+Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới gần 27 giây ở $N=30$ (Product) và 5.28 giây (Binary). Ngược lại, Binomial không có biến phụ lại giải cực nhanh (0.055s).
+
+Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**: **Commander** chỉ mất 0.035s tại $N=30$ — nhanh hơn cả Binomial — bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian chỉ khoảng 0.06 giây ở $N=30$.
 
 ![Runtime Comparison](results/chart_runtime_comparison.png)
 
@@ -41,10 +43,13 @@ NQueens_SAT_Project/
 │   ├── cp_solver.py    # Tích hợp Google OR-Tools (CP-SAT)
 │   └── benchmark.py    # Kịch bản chạy đo lường và vẽ biểu đồ tự động
 ├── results/            # Chứa file CSV và các biểu đồ PNG
+│   ├── sat_vs_cp_benchmark.csv      # Dữ liệu thực nghiệm đầy đủ
+│   ├── chart_runtime_comparison.png # Biểu đồ thời gian (thang log)
+│   └── chart_clauses_comparison.png # Biểu đồ số lượng mệnh đề
 ├── report/
 │   └── main.tex        # Báo cáo học thuật LaTeX chuẩn Elsevier
-├── requirements.txt    
-└── README.md           
+├── requirements.txt
+└── README.md
 ```
 
 ## 🚀 Hướng dẫn Cài đặt & Sử dụng
@@ -60,4 +65,22 @@ pip install -r requirements.txt
 ```bash
 python src/benchmark.py
 ```
+
+Kịch bản hỗ trợ các tham số dòng lệnh để chạy chọn lọc (hữu ích khi chỉ muốn chạy lại một mốc $N$ lớn):
+
+| Tham số | Mặc định | Mô tả |
+|---|---|---|
+| `--sizes` | `10 15 20 25 30` | Các mốc $N$ cần chạy |
+| `--methods` | cả 6 phương pháp | Các phương pháp cần chạy |
+| `--repeats` | `3` | Số lần lặp mỗi cấu hình để lấy trung bình |
+| `--timeout` | `100` | Giới hạn thời gian giải mỗi lần (giây) |
+| `--solver` | `glucose3` | Bộ giải PySAT sử dụng |
+| `--out` | `sat_vs_cp_benchmark.csv` | Tên file CSV đầu ra |
+| `--no-append` | tắt | Ghi đè CSV thay vì ghép thêm dữ liệu cũ |
+
+Ví dụ, chỉ chạy lại mốc $N=30$ với 5 lần lặp:
+```bash
+python src/benchmark.py --sizes 30 --repeats 5
+```
+
 Dữ liệu sẽ được lưu tự động vào thư mục `results/`.
