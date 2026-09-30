@@ -27,11 +27,16 @@ Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatoria
 \maketitle
 
 \section{Introduction}
-Bài toán sắp xếp đồ thị (Graph layout) và phân bổ tài nguyên là một họ các bài toán tối ưu hóa tổ hợp có ứng dụng thực tiễn rộng rãi trong thiết kế VLSI, kiến trúc viễn thông và lập lịch [1]. Trong họ bài toán này, N-Queens nổi lên như một bài toán nền tảng mang tính chuẩn mực để thử nghiệm sức mạnh của các thuật toán tìm kiếm.
+Bài toán sắp xếp đồ thị (Graph layout) và phân bổ tài nguyên là một họ các bài toán tối ưu hóa tổ hợp có ứng dụng thực tiễn rộng rãi trong thiết kế VLSI, kiến trúc viễn thông và lập lịch \cite{chung1988labelings}. Trong họ bài toán này, N-Queens nổi lên như một bài toán nền tảng mang tính chuẩn mực để thử nghiệm sức mạnh của các thuật toán tìm kiếm.
 
 Mục tiêu của bài toán là sắp xếp $N$ quân hậu trên bàn cờ sao cho khoảng cách tấn công theo luật cờ vua không bị vi phạm (không cùng hàng, cùng cột, hoặc cùng đường chéo). Khi chuyển dịch từ các bàn cờ nhỏ sang các bàn cờ kích thước lớn, sự bùng nổ tổ hợp (combinatorial explosion) khiến không gian trạng thái phình to theo hàm giai thừa. Các thuật toán quay lui (back-tracking) truyền thống nhanh chóng rơi vào trạng thái cạn kiệt tài nguyên tính toán.
 
-Nghiên cứu này trình bày một cách tiếp cận SAT-based hoàn chỉnh nhằm giải quyết bài toán N-Queens một cách chính xác. Thông qua việc phân tích hành vi của bộ giải SAT (CDCL Heuristics) trước lượng lớn biến phụ, nghiên cứu lấp đầy khoảng trống trong việc giải thích nghịch lý về hiệu năng của các chuẩn mã hóa CNF. Phần còn lại của bài báo cáo được tổ chức như sau: Phần 2 định nghĩa bài toán. Phần 3 thiết lập các công thức mô hình hóa toán học cho 5 chuẩn mã hóa SAT. Phần 4 mô tả mô hình CP. Phần 5 là thực nghiệm phân tích thắt cổ chai. Phần 6 là kết luận.
+Nghiên cứu này trình bày một cách tiếp cận SAT-based hoàn chỉnh nhằm giải quyết bài toán N-Queens một cách chính xác. Thông qua việc phân tích hành vi của bộ giải SAT (CDCL Heuristics) trước lượng lớn biến phụ, nghiên cứu phân tích định lượng nghịch lý về hiệu năng của các chuẩn mã hóa CNF. Phần còn lại của bài báo cáo được tổ chức như sau: Phần 2 định nghĩa bài toán. Phần 3 thiết lập các công thức mô hình hóa toán học cho 5 chuẩn mã hóa SAT. Phần 4 mô tả mô hình CP. Phần 5 là thực nghiệm phân tích thắt cổ chai. Phần 6 là kết luận.
+
+\section{Related Work}
+Việc chuyển đổi các ràng buộc đếm (cardinality constraints) sang CNF là một chủ đề nghiên cứu trưởng thành trong lý thuyết SAT. Warners \cite{warners1998nonlinear} đề xuất kỹ thuật mã hóa bất phương trình tuyến tính bằng biến phụ; Sinz \cite{sinz2005towards} sau đó đưa ra chuẩn Sequential Counter với độ phức tạp tuyến tính $O(n)$ mệnh đề, trở thành nền tảng cho rất nhiều bộ giải hiện đại. Gent và Nightingale \cite{gent2004generic} phân tích sự đánh đổi giữa kích thước mã hóa và hiệu quả lan truyền đơn vị. Cho ràng buộc AMO cụ thể, Klieber và Kwon \cite{klieber2007efficient} đề xuất chuẩn Commander, còn Chen \cite{chen2010new} đề xuất chuẩn Product dựa trên phân rã ma trận 2D.
+
+Về phía bộ giải, kiến trúc CDCL (Conflict-Driven Clause Learning) với heuristic VSIDS \cite{marques2008conflict} là nền tảng của Glucose3 \cite{audemard2009predicting} — bộ giải được dùng trong thực nghiệm này. Song song đó, Constraint Programming \cite{rossi2006handbook} giữ nguyên cấu trúc ràng buộc cao cấp và xử lý \texttt{AllDifferent} bằng thuật toán luồng cực đại \cite{regin1994filtering}, tạo nên hướng tiếp cận đối chuẩn với SAT. Nghiên cứu của chúng tôi đặt hai hướng này cạnh nhau trên cùng một bài toán, đồng thời làm rõ vai trò của cấu trúc mã hóa (chứ không chỉ kích thước) đối với hiệu năng bộ giải.
 
 \section{Problem Formulation}
 Bài toán N-Queens có thể được mô hình hóa dưới dạng một Bài toán Thỏa mãn Ràng buộc (Constraint Satisfaction Problem - CSP). Cho một bàn cờ kích thước $N \times N$, gọi $x_{i,j} \in \{0, 1\}$ là các biến nhị phân đại diện cho việc có đặt quân hậu tại tọa độ $(i, j)$ hay không. Hệ thống ràng buộc của bài toán được mô tả như sau:
@@ -51,10 +56,10 @@ Phương pháp trực quan nhất là thiết lập mệnh đề loại trừ l�
 \begin{equation}
     AMO_{Binomial}(X) = \bigwedge_{1 \leq i < j \leq n} (\neg x_i \vee \neg x_j)
 \end{equation}
-Mã hóa này không sử dụng thêm bất kỳ biến phụ (auxiliary variable) nào, tuy nhiên nó tạo ra độ phức tạp không gian $O(n^2)$ mệnh đề, dễ dàng dẫn tới cạn kiệt RAM ở $N$ lớn.
+Mã hóa này không sử dụng thêm bất kỳ biến phụ (auxiliary variable) nào, tuy nhiên nó tạo ra độ phức tạp không gian $O(n^2)$ mệnh đề.
 
 \subsection{Sequential Counter Encoding}
-Để giảm số lượng mệnh đề, Sinz (2005) [3] đề xuất sử dụng $n-1$ biến phụ $s_1, \dots, s_{n-1}$ đóng vai trò là một thanh ghi cộng dồn. Biến $s_i$ mang giá trị True nếu tồn tại ít nhất một $x_k$ ($k \leq i$) mang giá trị True.
+Để giảm số lượng mệnh đề, Sinz (2005) \cite{sinz2005towards} đề xuất sử dụng $n-1$ biến phụ $s_1, \dots, s_{n-1}$ đóng vai trò là một thanh ghi cộng dồn. Biến $s_i$ mang giá trị True nếu tồn tại ít nhất một $x_k$ ($k \leq i$) mang giá trị True.
 \begin{align}
     (\neg x_1 \vee s_1) \label{eq:seq1} \\
     \bigwedge_{i=2}^{n-1} \left( (\neg x_i \vee s_i) \wedge (\neg s_{i-1} \vee s_i) \wedge (\neg x_i \vee \neg s_{i-1}) \right) \label{eq:seq2} \\
@@ -65,9 +70,9 @@ Chuẩn này đưa số mệnh đề về mức tuyến tính $O(n)$, đánh đ�
 \subsection{Binary, Commander và Product Encodings}
 \textbf{Binary Encoding:} Biểu diễn chỉ số của biến True (nếu có) thông qua hệ nhị phân bằng cách sử dụng $\lceil \log_2 n \rceil$ biến phụ, sinh ra $O(n \log n)$ mệnh đề.
 
-\textbf{Commander Encoding:} Phân rã tập $X$ thành các nhóm con kích thước $\sqrt{n}$. Mỗi nhóm được quản lý bởi một biến "chỉ huy" (Commander variable). Chuẩn này là sự cân bằng (trade-off) với $O(n \sqrt{n})$ mệnh đề và $O(\sqrt{n})$ biến phụ.
+\textbf{Commander Encoding:} Phân rã tập $X$ thành các nhóm con kích thước $\sqrt{n}$ \cite{klieber2007efficient}. Mỗi nhóm được quản lý bởi một biến "chỉ huy" (Commander variable). Chuẩn này là sự cân bằng (trade-off) với $O(n \sqrt{n})$ mệnh đề và $O(\sqrt{n})$ biến phụ.
 
-\textbf{Product Encoding:} Sắp xếp các biến vào một ma trận 2D kích thước $p \times q$ (với $p \approx q \approx \sqrt{n}$). Một biến $x_k$ mang giá trị True kéo theo sự kích hoạt của dòng và cột tương ứng trong ma trận phụ, giảm số mệnh đề xuống $O(n)$ với $O(\sqrt{n})$ biến phụ.
+\textbf{Product Encoding:} Sắp xếp các biến vào một ma trận 2D kích thước $p \times q$ (với $p \approx q \approx \sqrt{n}$) \cite{chen2010new}. Một biến $x_k$ mang giá trị True kéo theo sự kích hoạt của dòng và cột tương ứng trong ma trận phụ, giảm số mệnh đề xuống $O(n)$ với $O(\sqrt{n})$ biến phụ.
 
 \section{Constraint Programming (CP) Formulation}
 Khác với SAT phải băm nhỏ bài toán thành các mệnh đề Boolean nhị phân, Constraint Programming (CP) duy trì cấu trúc số nguyên cao cấp. Bằng cách định nghĩa mảng biến $Q$ kích thước $N$ (với $Q_i \in \{0, \dots, N-1\}$ là cột của quân hậu tại hàng $i$), mô hình sử dụng ràng buộc toàn cục (Global Constraint):
@@ -92,35 +97,64 @@ Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý
     \label{fig:clauses}
 \end{figure}
 
-Tuy nhiên, sự tập trung vào Hình \ref{fig:runtime} phơi bày một nghịch lý thắt cổ chai (bottleneck) nghiêm trọng của SAT Solving: Không gian nhỏ không đồng nghĩa với thời gian thực thi nhanh. Mỗi cấu hình được chạy lặp lại 3 lần và lấy giá trị trung bình nhằm loại bỏ nhiễu đo lường; thời gian sinh mệnh đề được tách riêng khỏi thời gian giải.
-Tại $N=10$, thời gian giải của tất cả các thuật toán đều tương đương nhau (dưới $0.002s$). Nhưng khi $N$ bắt đầu lớn ($N \geq 25$), sự phân kỳ xuất hiện rõ rệt. Tại $N=30$, thuật toán Product và Binary bị nghẽn (hang) nghiêm trọng, tiêu tốn lần lượt $19.91s$ và $2.56s$ để tìm ra nghiệm. Trong khi đó, Binomial giải quyết thành công chỉ trong $0.019s$ (nhanh hơn Product khoảng $1.067$ lần).
+Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$, tách thành hai thành phần: thời gian sinh mệnh đề bằng Python (\emph{Gen}) và thời gian bộ giải SAT thực sự tìm nghiệm (\emph{Solve}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Thời gian thực thi tại $N=30$ (trung bình 3 lần lặp), đơn vị giây.}
+    \label{tab:runtime}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Encoding} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
+        \midrule
+        Binomial  & 43.240 &   900 & 0,03649 & 0,01895 \\
+        Sequential & 10.122 & 4.322 & 0,00334 & 1,34118 \\
+        Binary    & 17.286 & 1.666 & 0,02600 & 5,25448 \\
+        Commander & 13.358 & 1.606 & 0,00262 & 0,03277 \\
+        Product   & 10.200 & 2.426 & 0,00683 & 26,93992 \\
+        CP-SAT    & --     &   --  & 0,00067 & 0,06033 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Bảng \ref{tab:runtime} làm nổi bật một quan sát quan trọng: với Binomial, phần lớn thời gian ($0,036s$ trên tổng $0,055s$, tức khoảng $65\%$) nằm ở bước sinh mệnh đề bằng Python chứ không phải ở bộ giải. Điều này cho thấy khi đánh giá các encoding, cần phân biệt rõ chi phí \emph{mô hình hóa} và chi phí \emph{giải}.
+
+\subsection{Runtime Bottleneck Analysis}
+Sự tập trung vào Hình \ref{fig:runtime} phơi bày một nghịch lý thắt cổ chai (bottleneck) nghiêm trọng của SAT Solving: không gian mệnh đề nhỏ không đồng nghĩa với thời gian thực thi nhanh.
+
+Tại $N=10$, thời gian giải của tất cả các thuật toán đều tương đương nhau (dưới $0.002s$). Nhưng từ $N \geq 25$, sự phân kỳ xuất hiện rõ rệt. Tại $N=30$, thuật toán Product và Binary bị nghẽn nghiêm trọng, tiêu tốn lần lượt $26.94s$ và $5.28s$ để tìm ra nghiệm. Trong khi đó, Binomial giải quyết thành công chỉ trong $0.055s$, tức nhanh hơn Product khoảng $487$ lần — bất chấp việc sinh ra số mệnh đề gấp hơn bốn lần.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.65\textwidth]{chart_runtime_comparison.png}
-    \caption{Phân tích độ nghẽn thời gian giải (Solving Time) ở không gian tìm kiếm lớn.}
+    \caption{Phân tích độ nghẽn thời gian giải (thang log) ở không gian tìm kiếm lớn.}
     \label{fig:runtime}
 \end{figure}
 
 \textbf{Lý giải sự thắt cổ chai (Bottleneck explanation):} Sự suy thoái hiệu năng này không đơn thuần phụ thuộc vào số lượng biến phụ, mà phụ thuộc vào \emph{độ dài chuỗi kéo theo (implication chain)} và mức độ hỗ trợ của lan truyền đơn vị (unit propagation).
 
-Ở cực tốt, \textbf{Commander} duy trì hiệu năng xuất sắc ($0.038s$ tại $N=30$, ngang ngửa Binomial) bất chấp việc sinh tới $1.606$ biến phụ. Điều này là do ràng buộc chỉ huy được tổ chức thành các nhóm cục bộ kích thước $\sqrt{n}$, khiến lan truyền đơn vị có thể loại bỏ nhanh toàn bộ một nhóm ngay khi một phần tử được gán giá trị True — chuỗi kéo theo ngắn và mang tính địa phương.
+Ở cực tốt, \textbf{Commander} duy trì hiệu năng xuất sắc ($0.035s$ tại $N=30$) bất chấp việc sinh tới $1.606$ biến phụ — thậm chí nhanh hơn cả Binomial. Điều này là do ràng buộc chỉ huy được tổ chức thành các nhóm cục bộ kích thước $\sqrt{n}$, khiến lan truyền đơn vị có thể loại bỏ nhanh toàn bộ một nhóm ngay khi một phần tử được gán giá trị True: chuỗi kéo theo ngắn và mang tính địa phương.
 
-Ở cực xấu, \textbf{Product} suy thoái nghiêm trọng nhất ($19.91s$ tại $N=30$). Việc sắp các biến vào ma trận 2D khiến mỗi biến quân hậu ràng buộc đồng thời với một biến dòng và một biến cột, tạo ra chuỗi kéo theo dài và phân tán khắp ma trận. Heuristic VSIDS của Glucose3 bị phân tán quyết định phân nhánh trên các biến phụ này thay vì trên các biến quân hậu thực sự, khiến cây tìm kiếm phình to vô ích. \textbf{Binary} và \textbf{Sequential} nằm ở khoảng giữa ($2.56s$ và $0.72s$).
+Ở cực xấu, \textbf{Product} suy thoái nghiêm trọng nhất ($26.94s$ tại $N=30$). Việc sắp các biến vào ma trận 2D khiến mỗi biến quân hậu ràng buộc đồng thời với một biến dòng và một biến cột, tạo ra chuỗi kéo theo dài và phân tán khắp ma trận. Heuristic VSIDS của Glucose3 bị phân tán quyết định phân nhánh trên các biến phụ này thay vì trên các biến quân hậu thực sự, khiến cây tìm kiếm phình to vô ích. \textbf{Binary} và \textbf{Sequential} nằm ở khoảng giữa ($5.28s$ và $1.34s$).
 
-Đáng chú ý, \textbf{Binomial} — dù không có biến phụ và có số mệnh đề lớn nhất — lại giải nhanh thứ hai. Điều này cho thấy dung lượng CNF không phải là yếu tố quyết định; cái giá phải trả nằm ở việc bộ giải phải xử lý các biến phụ làm loãng thông tin heuristic, chứ không nằm ở kích thước file.
+Đáng chú ý, \textbf{Binomial} — dù không có biến phụ và có số mệnh đề lớn nhất — lại có thời gian \emph{giải} nhanh thứ hai ($0.019s$, chỉ sau Commander). Điều này cho thấy dung lượng CNF không phải là yếu tố quyết định; cái giá phải trả nằm ở việc bộ giải phải xử lý các biến phụ làm loãng thông tin heuristic, chứ không nằm ở kích thước file.
 
-Cuối cùng, CP-SAT thể hiện sự vượt trội vô đối (chưa tới $0.07s$ ở mốc $N=30$). Bằng cách không sử dụng Dạng chuẩn hội, thuật toán lọc miền giá trị toàn cục (Domain Filtering) của CP hoàn toàn né tránh được sự nhiễu loạn cây tìm kiếm.
+Cuối cùng, CP-SAT thể hiện sự vượt trội rõ rệt ($0.060s$ ở mốc $N=30$). Bằng cách không sử dụng Dạng chuẩn hội, thuật toán lọc miền giá trị toàn cục (Domain Filtering) của CP hoàn toàn né tránh được sự nhiễu loạn cây tìm kiếm.
 
 \section{Conclusion}
 Báo cáo đã cung cấp một phân tích định lượng và lý thuyết sâu sắc về các phương pháp giải quyết chính xác bài toán N-Queens. Khác với trực giác thông thường, việc cố gắng nén số lượng mệnh đề bằng cách chèn biến phụ (trong SAT) có thể gây tác dụng ngược ở các không gian tìm kiếm lớn, do làm suy yếu thuật toán định hướng (Heuristics). Tuy nhiên, mức độ suy thoái phụ thuộc vào cấu trúc ràng buộc mà encoding tạo ra chứ không đơn thuần vào số lượng biến phụ: Commander giữ được hiệu năng tốt nhờ các nhóm cục bộ hỗ trợ lan truyền đơn vị, trong khi Product suy thoái nặng do chuỗi kéo theo dài và phân tán. Báo cáo cũng khẳng định rằng, đối với các bài toán tối ưu có cấu trúc ràng buộc chặt chẽ, Constraint Programming (CP) mang lại giải pháp mô hình hóa và hiệu năng tính toán vượt trội hơn hẳn so với việc giảm cấp (reduction) về logic Boolean.
 
 \begin{thebibliography}{00}
-\bibitem{ref1} Chung, F.R.K., 1988. Labelings of graphs, in: Selected Topics in Graph Theory. Academic Press, pp. 151–168.
-\bibitem{ref2} Biere, A., Heule, M., van Maaren, H., Walsh, T. (Eds.), 2021. Handbook of Satisfiability. IOS Press.
-\bibitem{ref3} Sinz, C., 2005. Towards an optimal CNF encoding of boolean cardinality constraints. CP 2005, Springer.
-\bibitem{ref4} Klieber, W., Kwon, G., 2007. Efficient CNF encoding for selecting 1 from N objects.
-\bibitem{ref5} Chen, J., 2010. A new SAT encoding of the At-Most-One constraint.
+\bibitem{chung1988labelings} Chung, F.R.K., 1988. Labelings of graphs, in: Selected Topics in Graph Theory. Academic Press, pp. 151–168.
+\bibitem{warners1998nonlinear} Warners, J.P., 1998. A linear-time transformation of linear inequalities into conjunctive normal form. Information Processing Letters 68, 63–69.
+\bibitem{sinz2005towards} Sinz, C., 2005. Towards an optimal CNF encoding of boolean cardinality constraints, in: Principles and Practice of Constraint Programming (CP 2005). Springer, pp. 827–831.
+\bibitem{gent2004generic} Gent, I.P., Nightingale, P., 2004. A generic polynomial time approach to the encoding of CSP into SAT. Constraints 9, 85–102.
+\bibitem{klieber2007efficient} Klieber, W., Kwon, G., 2007. Efficient CNF encoding for selecting 1 from N objects, in: Fourth Workshop on Constraints in Formal Verification (CFV).
+\bibitem{chen2010new} Chen, J., 2010. A new SAT encoding of the At-Most-One constraint, in: Tenth International Workshop on Constraint Modelling and Reformulation (ModRef).
+\bibitem{marques2008conflict} Marques-Silva, J., Lynce, I., Malik, S., 2009. Conflict-driven clause learning SAT solvers, in: Handbook of Satisfiability. IOS Press, pp. 131–153.
+\bibitem{audemard2009predicting} Audemard, G., Simon, L., 2009. Predicting learnt clauses quality in modern SAT solvers, in: International Joint Conference on Artificial Intelligence (IJCAI). pp. 399–404.
+\bibitem{rossi2006handbook} Rossi, F., van Beek, P., Walsh, T. (Eds.), 2006. Handbook of Constraint Programming. Elsevier.
+\bibitem{regin1994filtering} Régin, J.C., 1994. A filtering algorithm for constraints of difference in CSPs, in: AAAI Conference on Artificial Intelligence. pp. 362–367.
 \end{thebibliography}
 
 \end{document}

@@ -1,4 +1,4 @@
 python-sat==0.1.8.dev13
-ortools
-pandas
-matplotlib
+ortools==9.15.6755
+pandas==3.0.6
+matplotlib==3.11.2

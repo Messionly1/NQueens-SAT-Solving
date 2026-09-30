@@ -27,9 +27,22 @@ Chuẩn Binomial phình to bộ nhớ cực nhanh theo hàm bậc hai, trong khi
 ![Clauses Comparison](results/chart_clauses_comparison.png)
 
 ### 2. Nghịch lý Thời gian giải (Runtime Bottleneck)
-Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới gần 27 giây ở $N=30$ (Product) và 5.28 giây (Binary). Ngược lại, Binomial không có biến phụ lại giải cực nhanh (0.055s).
+Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới gần 27 giây ở $N=30$ (Product) và 5.28 giây (Binary).
 
-Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**: **Commander** chỉ mất 0.035s tại $N=30$ — nhanh hơn cả Binomial — bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian chỉ khoảng 0.06 giây ở $N=30$.
+Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**. **Commander** chỉ mất **0.035s** tại $N=30$ — nhanh nhất trong tất cả các encoding SAT, bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. **Binomial** (không biến phụ) đứng thứ hai với 0.055s. Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian chỉ khoảng 0.06 giây ở $N=30$.
+
+Xem bảng chi tiết tại mốc $N=30$ (đơn vị giây):
+
+| Encoding | Mệnh đề | Biến | Gen | Solve | Tổng |
+|---|---|---|---|---|---|
+| Binomial | 43.240 | 900 | 0.0365 | 0.0189 | 0.0554 |
+| Sequential | 10.122 | 4.322 | 0.0033 | 1.3412 | 1.3445 |
+| Binary | 17.286 | 1.666 | 0.0260 | 5.2545 | 5.2805 |
+| Commander | 13.358 | 1.606 | 0.0026 | 0.0328 | 0.0354 |
+| Product | 10.200 | 2.426 | 0.0068 | 26.9399 | 26.9468 |
+| CP-SAT | — | — | 0.0007 | 0.0603 | 0.0610 |
+
+Lưu ý: cột **Gen** là thời gian sinh mệnh đề bằng Python, còn **Solve** mới là thời gian bộ giải SAT thực sự tìm nghiệm. Với Binomial, phần lớn thời gian nằm ở bước sinh mệnh đề chứ không phải ở bộ giải.
 
 ![Runtime Comparison](results/chart_runtime_comparison.png)
 
