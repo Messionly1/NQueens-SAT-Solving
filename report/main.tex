@@ -99,22 +99,23 @@ Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý
 Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$, tách thành hai thành phần: thời gian sinh mệnh đề bằng Python (\emph{Gen}) và thời gian bộ giải SAT thực sự tìm nghiệm (\emph{Solve}).
 
 \begin{table}[htbp]
-    \centering
-    \caption{Thời gian thực thi tại $N=30$ (trung bình 3 lần lặp), đơn vị giây.}
-    \label{tab:runtime}
-    \begin{tabular}{lrrrr}
-        \toprule
-        \textbf{Encoding} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
-        \midrule
-        Binomial  & 43.240 &   900 & 0,03649 & 0,01895 \\
-        Sequential & 10.122 & 4.322 & 0,00334 & 1,34118 \\
-        Binary    & 17.286 & 1.666 & 0,02600 & 5,25448 \\
-        Commander & 13.358 & 1.606 & 0,00262 & 0,03277 \\
-        Product   & 10.200 & 2.426 & 0,00683 & 26,93992 \\
-        CP-SAT    & --     &   --  & 0,00067 & 0,06033 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+      \centering
+      \caption{Thời gian thực thi tại =30$ (trung bình 3 lần lặp), đơn vị giây.}
+      \label{tab:runtime}
+      \begin{tabular}{lrrrr}
+          \toprule
+          \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
+          \midrule
+          Binomial  & 43.240 &   900 & 0,02220 & 0,00718 \\
+          Sequential & 10.122 & 4.322 & 0,00133 & 0,69575 \\
+          Binary    & 17.286 & 1.666 & 0,01119 & 2,48451 \\
+          Commander & 13.358 & 1.606 & 0,00269 & 0,03277 \\
+          Product   & 10.200 & 2.426 & 0,00301 & 25,17894 \\
+          CP-SAT    & --     &   --  & 0,00185 & 0,06837 \\
+          CPLEX-MIP & --     &   --  & 0,01606 & 0,02229 \\
+          \bottomrule
+      \end{tabular}
+  \end{table}
 
 Bảng \ref{tab:runtime} làm nổi bật một quan sát quan trọng: với Binomial, phần lớn thời gian ($0,036s$ trên tổng $0,055s$, tức khoảng $65\%$) nằm ở bước sinh mệnh đề bằng Python chứ không phải ở bộ giải. Điều này cho thấy khi đánh giá các encoding, cần phân biệt rõ chi phí \emph{mô hình hóa} và chi phí \emph{giải}.
 
@@ -141,7 +142,10 @@ Tại $N=10$, thời gian giải của tất cả các thuật toán đều tư�
 Cuối cùng, CP-SAT thể hiện sự vượt trội rõ rệt ($0.060s$ ở mốc $N=30$). Bằng cách không sử dụng Dạng chuẩn hội, thuật toán lọc miền giá trị toàn cục (Domain Filtering) của CP hoàn toàn né tránh được sự nhiễu loạn cây tìm kiếm.
 
 \section{Conclusion}
-Báo cáo đã cung cấp một phân tích định lượng và lý thuyết sâu sắc về các phương pháp giải quyết chính xác bài toán N-Queens. Khác với trực giác thông thường, việc cố gắng nén số lượng mệnh đề bằng cách chèn biến phụ (trong SAT) có thể gây tác dụng ngược ở các không gian tìm kiếm lớn, do làm suy yếu thuật toán định hướng (Heuristics). Tuy nhiên, mức độ suy thoái phụ thuộc vào cấu trúc ràng buộc mà encoding tạo ra chứ không đơn thuần vào số lượng biến phụ: Commander giữ được hiệu năng tốt nhờ các nhóm cục bộ hỗ trợ lan truyền đơn vị, trong khi Product suy thoái nặng do chuỗi kéo theo dài và phân tán. Báo cáo cũng khẳng định rằng, đối với các bài toán tối ưu có cấu trúc ràng buộc chặt chẽ, Constraint Programming (CP) mang lại giải pháp mô hình hóa và hiệu năng tính toán vượt trội hơn hẳn so với việc giảm cấp (reduction) về logic Boolean.
+Báo cáo đã cung cấp một phân tích định lượng và lý thuyết sâu sắc về các phương pháp giải quyết chính xác bài toán N-Queens. Khác với trực giác thông thường, việc cố gắng nén số lượng mệnh đề bằng cách chèn biến phụ (trong SAT) có thể gây tác dụng ngược ở các không gian tìm kiếm lớn, do làm suy yếu thuật toán định hướng (Heuristics). Tuy nhiên, mức độ suy thoái phụ thuộc vào cấu trúc ràng buộc mà encoding tạo ra chứ không đơn thuần vào số lượng biến phụ: Commander giữ được hiệu năng tốt nhờ các nhóm cục bộ hỗ trợ lan truyền đơn vị, trong khi Product suy thoái nặng do chuỗi kéo theo dài và phân tán. Báo cáo cũng khẳng định rằng, đối với các bài toán tối ưu có cấu trúc ràng buộc chặt chẽ, Constraint Programming (CP) và Integer Linear Programming (ILP) mang lại giải pháp mô hình hóa và hiệu năng tính toán vượt trội hơn hẳn so với việc giảm cấp (reduction) về logic Boolean.
+
+\section*{Data Availability}
+Toàn bộ mã nguồn, cấu hình môi trường, và kết quả thực nghiệm chi tiết của nghiên cứu này được lưu trữ và chia sẻ công khai tại kho chứa GitHub: \url{https://github.com/Messionly1/NQueens-SAT-Solving}. Các bộ giải mã nguồn mở (OR-Tools) và thương mại (CPLEX) đều được tích hợp sẵn. Lệnh để tự động mô phỏng lại thực nghiệm được mô tả chi tiết trong tập tin README.md của kho chứa.
 
 \begin{thebibliography}{00}
 \bibitem{chung1988labelings} Chung, F.R.K., 1988. Labelings of graphs, in: Selected Topics in Graph Theory. Academic Press, pp. 151–168.
