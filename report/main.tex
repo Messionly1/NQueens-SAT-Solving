@@ -4,21 +4,20 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{hyperref}
-\usepackage[utf8]{inputenc}
-\usepackage[T5]{fontenc} 
-\usepackage{lmodern}
+% Sử dụng XeLaTeX để hỗ trợ tiếng Việt Unicode chuẩn không lỗi Toán
+\usepackage{fontspec}
 \usepackage{booktabs}
 \usepackage{float}
 
 \begin{document}
 
 \shorttitle{Exact SAT Solving for the N-Queens Problem}
-\shortauthors{Phạm Vinh Trí}
+\shortauthors{Pham Vinh Tri}
 
 \title[mode = title]{Exact SAT Solving and Constraint Programming for the N-Queens Problem}
 
-\author[1]{Phạm Vinh Trí}
-\address[1]{Faculty of Information Technology, Trường Đại học Công nghệ, Việt Nam}
+\author[1]{Pham Vinh Tri}
+\address[1]{Faculty of Information Technology, VNU University of Engineering and Technology, 144 Xuan Thuy, Cau Giay Ward, Hanoi, 100000, Vietnam}
 
 \begin{abstract}
 Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với mô hình Constraint Programming (CP) thông qua thư viện Google OR-Tools. Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.

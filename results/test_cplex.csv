@@ -1,0 +1,4 @@
+Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Runtime(s),Is_SAT,Solution_Valid,Error
+8,CPLEX-MIP,0,0,0.026576,0.002984,0.029560,True,,
+8,CPLEX-CP,0,0,0.000000,0.000000,0.000000,,,AttributeError: 'bool' object has no attribute 'write'
+8,CPLEX-MIP,0,0,0.027179,0.002909,0.030089,True,,

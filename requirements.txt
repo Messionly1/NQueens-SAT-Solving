@@ -2,3 +2,7 @@ python-sat==0.1.8.dev13
 ortools==9.15.6755
 pandas==3.0.6
 matplotlib==3.11.2
+docplex==2.32.264
+cplex==22.2.0.1
+cplex==22.2.0.1
+docplex==2.32.264
