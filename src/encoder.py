@@ -141,4 +141,7 @@ class NQueensEncoder:
             if len(lits) > 1:
                 clauses.extend(amo_func(lits))
                 
+        for c in range(math.ceil(self.n / 2), self.n):
+            clauses.append([-self.var(0, c)])
+            
         return clauses, self.next_var - 1

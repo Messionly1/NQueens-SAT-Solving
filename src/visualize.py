@@ -52,11 +52,8 @@ def main():
             print(f"Đã giải xong trong {runtime:.4f}s!")
             model = solver.get_model()
             
-            # Lọc các biến mang giá trị True (thuộc khoảng 1 đến n*n)
-            # để loại bỏ các biến phụ
             true_vars = [v for v in model if v > 0 and v <= n * n]
             
-            # Chuyển đổi ID biến thành vị trí cột
             queens_positions = [0] * n
             for v in true_vars:
                 r = (v - 1) // n

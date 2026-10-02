@@ -8,26 +8,20 @@ class CplexMIPSolver:
         self.timed_out = False
         self.model = Model(name="NQueens_MIP")
 
-        # Variables: x[i, j] = 1 if queen at row i, col j
         self.x = self.model.binary_var_matrix(keys1=range(n), keys2=range(n), name="q")
 
-        # Constraints:
-        # 1. Exactly one queen per row
         for i in range(n):
             self.model.add_constraint(self.model.sum(self.x[i, j] for j in range(n)) == 1)
 
-        # 2. Exactly one queen per column
         for j in range(n):
             self.model.add_constraint(self.model.sum(self.x[i, j] for i in range(n)) == 1)
 
-        # 3. At most one queen per major diagonal (row - col = const)
         for k in range(-n + 1, n):
             cells = [(i, i - k) for i in range(max(0, k), min(n, n + k))]
             if len(cells) > 1:
                 self.model.add_constraint(
                     self.model.sum(self.x[i, j] for i, j in cells) <= 1)
 
-        # 4. At most one queen per minor diagonal (row + col = const)
         for k in range(2 * n - 1):
             cells = [(i, k - i) for i in range(max(0, k - n + 1), min(n, k + 1))]
             if len(cells) > 1:

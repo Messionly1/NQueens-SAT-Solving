@@ -51,7 +51,7 @@ def record_result(writer, results, n, alg_label, num_vars, num_clauses,
         'Is_SAT': is_sat, 'Valid': valid, 'Error': error,
     })
 
-def benchmark_sat(n, enc_name, solver_name, repeats):
+def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
     gen_times, solve_times = [], []
     num_vars = num_clauses = 0
     is_sat = None
@@ -65,7 +65,7 @@ def benchmark_sat(n, enc_name, solver_name, repeats):
         gen_times.append(time.time() - start_gen)
         num_clauses = len(clauses)
         solver = SATSolverWrapper(clauses)
-        is_sat, solve_time = solver.solve(solver_name)
+        is_sat, solve_time = solver.solve(solver_name, time_limit_sec=timeout_sec)
         solve_times.append(solve_time)
         if not is_sat:
             break
@@ -133,7 +133,7 @@ def run_benchmark(args):
                     else:
                         (num_vars, num_clauses, gen_time, solve_time,
                          is_sat, valid) = benchmark_sat(
-                            n, enc_name, args.solver, args.repeats)
+                            n, enc_name, args.solver, args.repeats, args.timeout)
                         total_time = gen_time + solve_time
                         error = ""
                     record_result(writer, results, n, alg_label, num_vars, num_clauses,
