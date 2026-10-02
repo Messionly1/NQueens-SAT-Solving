@@ -13,6 +13,7 @@ from solver import SATSolverWrapper
 from cp_solver import CPQueensSolver
 from cplex_mip_solver import CplexMIPSolver
 from cplex_cp_solver import CplexCPSolver
+from gurobi_mip_solver import GurobiMIPSolver
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -20,7 +21,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'results')
 
 DEFAULT_SIZES = [10, 15, 20, 25, 30]
-DEFAULT_METHODS = ["binomial", "sequential", "binary", "commander", "product", "cp-sat", "cplex-mip", "cplex-cp"]
+DEFAULT_METHODS = ["binomial", "sequential", "binary", "commander", "product", "cp-sat", "cplex-mip", "cplex-cp", "gurobi-mip"]
 CSV_COLUMNS = [
     'Board_Size', 'Algorithm', 'Variables', 'Clauses',
     'Gen_Time(s)', 'Solve_Time(s)', 'Runtime(s)', 'Is_SAT', 'Solution_Valid', 'Error',
@@ -100,7 +101,7 @@ def run_benchmark(args):
                     alg_label = enc_name.capitalize()
                 
                 try:
-                    if enc_name in ["cp-sat", "cplex-mip", "cplex-cp"]:
+                    if enc_name in ["cp-sat", "cplex-mip", "cplex-cp", "gurobi-mip"]:
                         gen_times, solve_times = [], []
                         is_sat, valid = None, None
                         timed_out = False
@@ -113,6 +114,8 @@ def run_benchmark(args):
                                 active_solver = CplexMIPSolver(n)
                             elif enc_name == "cplex-cp":
                                 active_solver = CplexCPSolver(n)
+                            elif enc_name == "gurobi-mip":
+                                active_solver = GurobiMIPSolver(n)
 
                             gen_times.append(time.time() - start_gen)
                             is_sat, solve_time = active_solver.solve(time_limit_sec=args.timeout)

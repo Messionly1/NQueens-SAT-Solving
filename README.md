@@ -29,18 +29,19 @@ Chuẩn Binomial phình to bộ nhớ cực nhanh theo hàm bậc hai, trong khi
 ### 2. Nghịch lý Thời gian giải (Runtime Bottleneck)
 Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới gần 27 giây ở $N=30$ (Product) và 5.28 giây (Binary).
 
-Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**. **Commander** chỉ mất **0.035s** tại $N=30$ — nhanh nhất trong tất cả các encoding SAT, bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. **Binomial** (không biến phụ) đứng thứ hai với 0.055s. Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian chỉ khoảng 0.06 giây ở $N=30$.
+Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**. **Commander** chỉ mất **0.034s** tại $N=30$ — nhanh nhất trong tất cả các encoding SAT, bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. **Binomial** (không biến phụ) đứng thứ hai với 0.028s. Cuối cùng, CP-SAT thống trị hoàn toàn bài toán với thời gian chỉ khoảng 0.06 giây ở $N=30$.
 
 Xem bảng chi tiết tại mốc $N=30$ (đơn vị giây):
 
-| Encoding | Mệnh đề | Biến | Gen | Solve | Tổng |
+| Encoding / Solver | Mệnh đề | Biến | Gen (s) | Solve (s) | Tổng (s) |
 |---|---|---|---|---|---|
-| Binomial | 43.240 | 900 | 0.0365 | 0.0189 | 0.0554 |
-| Sequential | 10.122 | 4.322 | 0.0033 | 1.3412 | 1.3445 |
-| Binary | 17.286 | 1.666 | 0.0260 | 5.2545 | 5.2805 |
-| Commander | 13.358 | 1.606 | 0.0026 | 0.0328 | 0.0354 |
-| Product | 10.200 | 2.426 | 0.0068 | 26.9399 | 26.9468 |
-| CP-SAT | — | — | 0.0007 | 0.0603 | 0.0610 |
+| Binomial | 43.240 | 900 | 0.02120 | 0.00684 | 0.02804 |
+| Sequential | 10.122 | 4.322 | 0.00133 | 0.69580 | 0.69713 |
+| Binary | 17.286 | 1.666 | 0.01001 | 2.47122 | 2.48124 |
+| Commander | 13.358 | 1.606 | 0.00301 | 0.03406 | 0.03708 |
+| Product | 10.200 | 2.426 | 0.00215 | 26.83777 | 26.83992 |
+| CP-SAT | — | — | 0.00167 | 0.08832 | 0.08999 |
+| CPLEX-MIP | — | — | 0.02179 | 0.02119 | 0.04298 |
 
 Lưu ý: cột **Gen** là thời gian sinh mệnh đề bằng Python, còn **Solve** mới là thời gian bộ giải SAT thực sự tìm nghiệm. Với Binomial, phần lớn thời gian nằm ở bước sinh mệnh đề chứ không phải ở bộ giải.
 
@@ -51,10 +52,13 @@ Lưu ý: cột **Gen** là thời gian sinh mệnh đề bằng Python, còn **S
 ```text
 NQueens_SAT_Project/
 ├── src/
-│   ├── encoder.py      # Chứa 5 thuật toán mã hóa AMO sang CNF
-│   ├── solver.py       # Tích hợp PySAT (Glucose3)
-│   ├── cp_solver.py    # Tích hợp Google OR-Tools (CP-SAT)
-│   └── benchmark.py    # Kịch bản chạy đo lường và vẽ biểu đồ tự động
+│   ├── encoder.py          # Chứa 5 thuật toán mã hóa AMO sang CNF
+│   ├── solver.py           # Tích hợp PySAT (Glucose3 cho SAT)
+│   ├── cp_solver.py        # Tích hợp Google OR-Tools (CP-SAT)
+│   ├── cplex_mip_solver.py # Tích hợp IBM CPLEX (MIP/ILP)
+│   ├── cplex_cp_solver.py  # Tích hợp IBM CPLEX CP Optimizer
+│   ├── visualize.py        # In bàn cờ N-Queens trực quan ra terminal
+│   └── benchmark.py        # Kịch bản chạy đo lường và vẽ biểu đồ tự động
 ├── results/            # Chứa file CSV và các biểu đồ PNG
 │   ├── sat_vs_cp_benchmark.csv      # Dữ liệu thực nghiệm đầy đủ
 │   ├── chart_runtime_comparison.png # Biểu đồ thời gian (thang log)
@@ -84,7 +88,7 @@ Kịch bản hỗ trợ các tham số dòng lệnh để chạy chọn lọc (h
 | Tham số | Mặc định | Mô tả |
 |---|---|---|
 | `--sizes` | `10 15 20 25 30` | Các mốc $N$ cần chạy |
-| `--methods` | cả 6 phương pháp | Các phương pháp cần chạy |
+| `--methods` | cả 8 phương pháp | Các phương pháp cần chạy |
 | `--repeats` | `3` | Số lần lặp mỗi cấu hình để lấy trung bình |
 | `--timeout` | `100` | Giới hạn thời gian giải mỗi lần (giây) |
 | `--solver` | `glucose3` | Bộ giải PySAT sử dụng |

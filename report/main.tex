@@ -4,10 +4,13 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{hyperref}
-% Sử dụng XeLaTeX để hỗ trợ tiếng Việt Unicode chuẩn không lỗi Toán
+% Dùng XeLaTeX để hỗ trợ tiếng Việt Unicode chuẩn không lỗi Toán
 \usepackage{fontspec}
+\usepackage{unicode-math}
 \usepackage{booktabs}
 \usepackage{float}
+
+\graphicspath{{../results/}{results/}}
 
 \begin{document}
 
@@ -20,7 +23,7 @@
 \address[1]{Faculty of Information Technology, VNU University of Engineering and Technology, 144 Xuan Thuy, Cau Giay Ward, Hanoi, 100000, Vietnam}
 
 \begin{abstract}
-Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với mô hình Constraint Programming (CP) thông qua thư viện Google OR-Tools. Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.
+Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với hai họ phương pháp giải chính xác khác là Constraint Programming (OR-Tools CP-SAT) và Integer Linear Programming (IBM CPLEX-MIP). Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.
 \end{abstract}
 
 \maketitle
@@ -35,7 +38,7 @@ Nghiên cứu này trình bày một cách tiếp cận SAT-based hoàn chỉnh 
 \section{Related Work}
 Việc chuyển đổi các ràng buộc đếm (cardinality constraints) sang CNF là một chủ đề nghiên cứu trưởng thành trong lý thuyết SAT. Warners \cite{warners1998nonlinear} đề xuất kỹ thuật mã hóa bất phương trình tuyến tính bằng biến phụ; Sinz \cite{sinz2005towards} sau đó đưa ra chuẩn Sequential Counter với độ phức tạp tuyến tính $O(n)$ mệnh đề, trở thành nền tảng cho rất nhiều bộ giải hiện đại. Gent và Nightingale \cite{gent2004generic} phân tích sự đánh đổi giữa kích thước mã hóa và hiệu quả lan truyền đơn vị. Cho ràng buộc AMO cụ thể, Klieber và Kwon \cite{klieber2007efficient} đề xuất chuẩn Commander, còn Chen \cite{chen2010new} đề xuất chuẩn Product dựa trên phân rã ma trận 2D.
 
-Về phía bộ giải, kiến trúc CDCL (Conflict-Driven Clause Learning) với heuristic VSIDS \cite{marques2008conflict} là nền tảng của Glucose3 \cite{audemard2009predicting} — bộ giải được dùng trong thực nghiệm này. Song song đó, Constraint Programming \cite{rossi2006handbook} giữ nguyên cấu trúc ràng buộc cao cấp và xử lý \texttt{AllDifferent} bằng thuật toán luồng cực đại \cite{regin1994filtering}, tạo nên hướng tiếp cận đối chuẩn với SAT. Nghiên cứu của chúng tôi đặt hai hướng này cạnh nhau trên cùng một bài toán, đồng thời làm rõ vai trò của cấu trúc mã hóa (chứ không chỉ kích thước) đối với hiệu năng bộ giải.
+Về phía bộ giải, kiến trúc CDCL (Conflict-Driven Clause Learning) với heuristic VSIDS \cite{marques2008conflict} là nền tảng của Glucose3 \cite{audemard2009predicting} — bộ giải được dùng trong thực nghiệm này. Song song đó, Constraint Programming \cite{rossi2006handbook} giữ nguyên cấu trúc ràng buộc cao cấp và xử lý \texttt{AllDifferent} bằng thuật toán luồng cực đại \cite{regin1994filtering}, tạo nên hướng tiếp cận đối chuẩn với SAT. Bên cạnh đó, Quy hoạch tuyến tính nguyên (Integer Linear Programming — ILP) \cite{bertsimas1997introduction} mô hình hóa bài toán bằng các bất phương trình khoảng và giải bằng Branch-and-Cut; nhờ branching trực tiếp trên biến gốc mà không sinh biến phụ, ILP thường tránh được sự nhiễu loạn heuristic của SAT. Nghiên cứu của chúng tôi đặt ba hướng này (SAT, CP, ILP) cạnh nhau trên cùng một bài toán, đồng thời làm rõ vai trò của cấu trúc mã hóa (chứ không chỉ kích thước) đối với hiệu năng bộ giải.
 
 \section{Problem Formulation}
 Bài toán N-Queens có thể được mô hình hóa dưới dạng một Bài toán Thỏa mãn Ràng buộc (Constraint Satisfaction Problem - CSP). Cho một bàn cờ kích thước $N \times N$, gọi $x_{i,j} \in \{0, 1\}$ là các biến nhị phân đại diện cho việc có đặt quân hậu tại tọa độ $(i, j)$ hay không. Hệ thống ràng buộc của bài toán được mô tả như sau:
@@ -99,23 +102,23 @@ Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý
 Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$, tách thành hai thành phần: thời gian sinh mệnh đề bằng Python (\emph{Gen}) và thời gian bộ giải SAT thực sự tìm nghiệm (\emph{Solve}).
 
 \begin{table}[htbp]
-      \centering
-      \caption{Thời gian thực thi tại =30$ (trung bình 3 lần lặp), đơn vị giây.}
-      \label{tab:runtime}
-      \begin{tabular}{lrrrr}
-          \toprule
-          \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
-          \midrule
-          Binomial  & 43.240 &   900 & 0,02220 & 0,00718 \\
-          Sequential & 10.122 & 4.322 & 0,00133 & 0,69575 \\
-          Binary    & 17.286 & 1.666 & 0,01119 & 2,48451 \\
-          Commander & 13.358 & 1.606 & 0,00269 & 0,03277 \\
-          Product   & 10.200 & 2.426 & 0,00301 & 25,17894 \\
-          CP-SAT    & --     &   --  & 0,00185 & 0,06837 \\
-          CPLEX-MIP & --     &   --  & 0,01606 & 0,02229 \\
-          \bottomrule
-      \end{tabular}
-  \end{table}
+    \centering
+    \caption{Thời gian thực thi tại $N=30$ (trung bình 3 lần lặp), đơn vị giây.}
+    \label{tab:runtime}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
+        \midrule
+        Binomial  & 43.240 &   900 & 0,02120 & 0,00684 \\
+        Sequential & 10.122 & 4.322 & 0,00133 & 0,69580 \\
+        Binary    & 17.286 & 1.666 & 0,01001 & 2,47122 \\
+        Commander & 13.358 & 1.606 & 0,00301 & 0,03406 \\
+        Product   & 10.200 & 2.426 & 0,00215 & 26,83777 \\
+        CP-SAT    & --     &   --  & 0,00167 & 0,08832 \\
+        CPLEX-MIP & --     &   --  & 0,02179 & 0,02119 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 Bảng \ref{tab:runtime} làm nổi bật một quan sát quan trọng: với Binomial, phần lớn thời gian ($0,036s$ trên tổng $0,055s$, tức khoảng $65\%$) nằm ở bước sinh mệnh đề bằng Python chứ không phải ở bộ giải. Điều này cho thấy khi đánh giá các encoding, cần phân biệt rõ chi phí \emph{mô hình hóa} và chi phí \emph{giải}.
 
@@ -158,6 +161,7 @@ Toàn bộ mã nguồn, cấu hình môi trường, và kết quả thực nghi�
 \bibitem{audemard2009predicting} Audemard, G., Simon, L., 2009. Predicting learnt clauses quality in modern SAT solvers, in: International Joint Conference on Artificial Intelligence (IJCAI). pp. 399–404.
 \bibitem{rossi2006handbook} Rossi, F., van Beek, P., Walsh, T. (Eds.), 2006. Handbook of Constraint Programming. Elsevier.
 \bibitem{regin1994filtering} Régin, J.C., 1994. A filtering algorithm for constraints of difference in CSPs, in: AAAI Conference on Artificial Intelligence. pp. 362–367.
+\bibitem{bertsimas1997introduction} Bertsimas, D., Tsitsiklis, J.N., 1997. Introduction to Linear Optimization. Athena Scientific, Belmont, MA.
 \end{thebibliography}
 
 \end{document}

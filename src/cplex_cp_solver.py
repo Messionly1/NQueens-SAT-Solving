@@ -1,8 +1,35 @@
+import os
+import glob
 import time
 from docplex.cp.model import CpoModel
 
+def _find_cpoptimizer() -> str:
+    roots = [
+        r"C:\Program Files\IBM\ILOG",
+        r"C:\Program Files (x86)\IBM\ILOG",
+        os.environ.get("CPLEX_STUDIO_DIR", ""),
+    ]
+    for root in roots:
+        if not root:
+            continue
+        pattern = os.path.join(root, "CPLEX_Studio*", "cpoptimizer", "bin", "*", "cpoptimizer.exe")
+        hits = glob.glob(pattern)
+        if hits:
+            return hits[0]
+    return ""
+
 def _engine_available() -> bool:
     try:
+        exe = _find_cpoptimizer()
+        if exe:
+            os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + os.environ.get("PATH", "")
+            model = CpoModel()
+            ctx = model.get_cpo_context()
+            ctx.solver.local.execfile = exe
+            from docplex.cp.solver.solver_local import CpoSolverLocal
+            CpoSolverLocal(None, ctx)
+            return True
+
         from docplex.cp.solver.solver_local import CpoSolverLocal
         ctx = CpoModel().get_cpo_context()
         CpoSolverLocal(None, ctx)
@@ -17,16 +44,18 @@ class CplexCPSolver:
         self.timed_out = False
         self.model = CpoModel(name="NQueens_CP")
 
-        # Variables: q[i] is the column of the queen in row i
         self.q = self.model.integer_var_list(n, 0, n - 1, "q")
-
-        # Constraints:
         self.model.add(self.model.all_diff(self.q))
         self.model.add(self.model.all_diff([self.q[i] - i for i in range(n)]))
         self.model.add(self.model.all_diff([self.q[i] + i for i in range(n)]))
 
     def solve(self, time_limit_sec: float = 100.0):
-        if not _engine_available():
+        exe = _find_cpoptimizer()
+        if exe:
+            os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + os.environ.get("PATH", "")
+            ctx = self.model.get_cpo_context()
+            ctx.solver.local.execfile = exe
+        elif not _engine_available():
             raise RuntimeError("MISSING_ENGINE")
 
         start_time = time.time()
