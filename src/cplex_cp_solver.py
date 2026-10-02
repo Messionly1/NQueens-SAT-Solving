@@ -19,24 +19,8 @@ def _find_cpoptimizer() -> str:
     return ""
 
 def _engine_available() -> bool:
-    try:
-        exe = _find_cpoptimizer()
-        if exe:
-            os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + os.environ.get("PATH", "")
-            model = CpoModel()
-            ctx = model.get_cpo_context()
-            ctx.solver.local.execfile = exe
-            from docplex.cp.solver.solver_local import CpoSolverLocal
-            CpoSolverLocal(None, ctx)
-            return True
-
-        from docplex.cp.solver.solver_local import CpoSolverLocal
-        ctx = CpoModel().get_cpo_context()
-        CpoSolverLocal(None, ctx)
-        return True
-    except Exception:
-        return False
-
+    exe = _find_cpoptimizer()
+    return bool(exe)
 class CplexCPSolver:
     def __init__(self, n: int):
         self.n = n
@@ -51,15 +35,14 @@ class CplexCPSolver:
 
     def solve(self, time_limit_sec: float = 100.0):
         exe = _find_cpoptimizer()
-        if exe:
-            os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + os.environ.get("PATH", "")
-            ctx = self.model.get_cpo_context()
-            ctx.solver.local.execfile = exe
-        elif not _engine_available():
+        if not exe:
             raise RuntimeError("MISSING_ENGINE")
 
+        cplex_bin = os.path.dirname(exe).replace("cpoptimizer", "cplex")
+        os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + cplex_bin + os.pathsep + os.environ.get("PATH", "")
+
         start_time = time.time()
-        solution = self.model.solve(TimeLimit=time_limit_sec, LogVerbosity="Quiet")
+        solution = self.model.solve(TimeLimit=time_limit_sec, LogVerbosity="Quiet", execfile=exe)
         end_time = time.time()
 
         runtime = end_time - start_time
