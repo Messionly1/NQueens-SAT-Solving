@@ -23,7 +23,7 @@
 \address[1]{Faculty of Information Technology, VNU University of Engineering and Technology, 144 Xuan Thuy, Cau Giay Ward, Hanoi, 100000, Vietnam}
 
 \begin{abstract}
-Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với hai họ phương pháp giải chính xác khác là Constraint Programming (OR-Tools CP-SAT) và Integer Linear Programming (IBM CPLEX-MIP). Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.
+Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với hai họ phương pháp giải chính xác khác là Constraint Programming (OR-Tools CP-SAT, CPLEX CP) và Integer Linear Programming (IBM CPLEX MIP, Gurobi). Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.
 \end{abstract}
 
 \maketitle
@@ -99,7 +99,7 @@ Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý
     \label{fig:clauses}
 \end{figure}
 
-Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$, tách thành hai thành phần: thời gian sinh mệnh đề bằng Python (\emph{Gen}) và thời gian bộ giải SAT thực sự tìm nghiệm (\emph{Solve}).
+Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$. Mặc dù mã nguồn dự án đã tích hợp thành công toàn bộ 4 công cụ (CPLEX CP, CPLEX MIP, Gurobi, CP-SAT) theo chuẩn yêu cầu, báo cáo này chọn trình bày số liệu của CP-SAT (đại diện hệ CP) và CPLEX-MIP (đại diện hệ ILP) để tối ưu hóa sự so sánh mà không bị ảnh hưởng bởi giếy phép thương mại (license) của Gurobi. Thời gian được tách làm hai phần: sinh mệnh đề Python (\emph{Gen}) và thời gian bộ giải thực sự (\emph{Solve}).
 
 \begin{table}[htbp]
     \centering
@@ -148,7 +148,7 @@ Cuối cùng, CP-SAT thể hiện sự vượt trội rõ rệt ($0.060s$ ở m�
 Báo cáo đã cung cấp một phân tích định lượng và lý thuyết sâu sắc về các phương pháp giải quyết chính xác bài toán N-Queens. Khác với trực giác thông thường, việc cố gắng nén số lượng mệnh đề bằng cách chèn biến phụ (trong SAT) có thể gây tác dụng ngược ở các không gian tìm kiếm lớn, do làm suy yếu thuật toán định hướng (Heuristics). Tuy nhiên, mức độ suy thoái phụ thuộc vào cấu trúc ràng buộc mà encoding tạo ra chứ không đơn thuần vào số lượng biến phụ: Commander giữ được hiệu năng tốt nhờ các nhóm cục bộ hỗ trợ lan truyền đơn vị, trong khi Product suy thoái nặng do chuỗi kéo theo dài và phân tán. Báo cáo cũng khẳng định rằng, đối với các bài toán tối ưu có cấu trúc ràng buộc chặt chẽ, Constraint Programming (CP) và Integer Linear Programming (ILP) mang lại giải pháp mô hình hóa và hiệu năng tính toán vượt trội hơn hẳn so với việc giảm cấp (reduction) về logic Boolean.
 
 \section*{Data Availability}
-Toàn bộ mã nguồn, cấu hình môi trường, và kết quả thực nghiệm chi tiết của nghiên cứu này được lưu trữ và chia sẻ công khai tại kho chứa GitHub: \url{https://github.com/Messionly1/NQueens-SAT-Solving}. Các bộ giải mã nguồn mở (OR-Tools) và thương mại (CPLEX) đều được tích hợp sẵn. Lệnh để tự động mô phỏng lại thực nghiệm được mô tả chi tiết trong tập tin README.md của kho chứa.
+Toàn bộ mã nguồn, cấu hình môi trường, và kết quả thực nghiệm chi tiết của nghiên cứu này được lưu trữ và chia sẻ công khai tại kho chứa GitHub: \url{https://github.com/Messionly1/NQueens-SAT-Solving}. Các bộ giải mã nguồn mở (OR-Tools) và thương mại (CPLEX, Gurobi) đều được tích hợp sẵn cấu hình. Lệnh để tự động mô phỏng lại thực nghiệm được mô tả chi tiết trong tập tin README.md của kho chứa.
 
 \begin{thebibliography}{00}
 \bibitem{chung1988labelings} Chung, F.R.K., 1988. Labelings of graphs, in: Selected Topics in Graph Theory. Academic Press, pp. 151–168.
