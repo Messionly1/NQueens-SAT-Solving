@@ -1,0 +1,9 @@
+Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Runtime(s),Is_SAT,Solution_Valid,Error
+50,Binomial,2500,203425,0.079040,0.194811,0.273851,True,True,
+50,Sequential,12202,28887,0.003997,27.893120,27.897117,True,True,
+50,Binary,4036,57219,0.029001,90.000000,90.029001,False,,
+50,Commander,4114,44905,0.006999,7.134752,7.141750,True,True,
+50,Product,5910,29353,0.003992,90.000000,90.003992,False,,
+50,CP-SAT,0,0,0.001000,0.144689,0.145689,True,True,
+50,CPLEX-CP,0,0,0.001000,0.029174,0.030175,True,True,
+50,Gurobi-mip,0,0,0.000000,0.000000,0.000000,,,GurobiError: Model too large for size-limited license; visit https://gurobi.com/unrestricted for more information

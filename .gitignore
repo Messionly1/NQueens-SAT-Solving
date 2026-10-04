@@ -27,3 +27,17 @@ report/*.fdb_latexmk
 report/*.synctex.gz
 report/*.bbl
 report/*.blg
+
+# File kiểm tra tạm thời
+report/_check.py
+results/_verify.py
+*_run.log
+*_err.log
+
+# File cài đặt phần mềm (kích thước lớn, không nên lưu trong repo)
+*.msi
+*.exe
+
+# File backup dữ liệu thực nghiệm
+*_BACKUP.csv
+*.OLD_BACKUP.csv
