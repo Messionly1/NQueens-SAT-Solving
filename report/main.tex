@@ -9,6 +9,14 @@
 \usepackage{unicode-math}
 \usepackage{booktabs}
 \usepackage{float}
+% Định dạng số thập phân chuẩn khoa học (dấu chấm) cho các bảng kết quả
+\usepackage{siunitx}
+\sisetup{
+    detect-all,
+    group-separator = {\,},
+    group-minimum-digits = 5,
+    output-decimal-marker = {.}
+}
 
 \graphicspath{{../results/}{results/}}
 
@@ -23,10 +31,14 @@
 \address[1]{Faculty of Information Technology, VNU University of Engineering and Technology, 144 Xuan Thuy, Cau Giay Ward, Hanoi, 100000, Vietnam}
 
 \begin{abstract}
-Bài toán N-Queens là một bài toán tối ưu hóa tổ hợp (combinatorial optimization) kinh điển, yêu cầu tìm kiếm một cấu hình sắp xếp an toàn cho mạng lưới các quân hậu trên bàn cờ $N \times N$. Báo cáo này trình bày phương pháp tiếp cận chính xác (exact approach) dựa trên kỹ thuật Thỏa mãn logic mệnh đề (SAT Solving) để giải quyết bài toán. Cống hiến chính của nghiên cứu là việc mô hình hóa toán học, cài đặt và đánh giá đối chuẩn 5 chuẩn mã hóa At-Most-One (AMO) bao gồm: Binomial, Sequential Counter, Binary, Commander và Product. Hơn thế nữa, nghiên cứu thực hiện đối chuẩn toàn diện với hai họ phương pháp giải chính xác khác là Constraint Programming (OR-Tools CP-SAT, CPLEX CP) và Integer Linear Programming (IBM CPLEX MIP, Gurobi). Các kết quả thực nghiệm từ các mốc không gian nhỏ ($N=10$) đến các không gian tìm kiếm khổng lồ ($N=30$) giải mã sự đánh đổi khốc liệt giữa không gian lưu trữ và thời gian giải, đồng thời lý giải nguyên nhân sâu xa dẫn tới hiện tượng thắt cổ chai (bottleneck) của các thuật toán SAT trước bài toán chứa ràng buộc toàn cục.
+The N-Queens problem is a classic combinatorial optimization problem that requires finding a safe arrangement of queens on an $N \times N$ board. This report presents an exact approach based on Boolean Satisfiability (SAT) Solving. The main contribution is the mathematical modeling, implementation, and benchmarking of five At-Most-One (AMO) encodings: Binomial, Sequential Counter, Binary, Commander, and Product. Furthermore, we conduct a comprehensive cross-comparison against two other families of exact methods: Constraint Programming (OR-Tools CP-SAT, CPLEX CP) and Integer Linear Programming (IBM CPLEX MIP, Gurobi). Experimental results ranging from small instances ($N=10$) up to very large search spaces ($N=30$, with scalability studies at $N=40$ and $N=50$) reveal the severe trade-off between encoding size and solving time, and explain the root cause of the runtime bottleneck that SAT-based methods face on problems with global constraints.
 \end{abstract}
 
 \maketitle
+
+\begin{keywords}
+N-Queens \sep SAT Solving \sep At-Most-One Encoding \sep Constraint Programming \sep Integer Linear Programming \sep Combinatorial Optimization
+\end{keywords}
 
 \section{Introduction}
 Bài toán sắp xếp đồ thị (Graph layout) và phân bổ tài nguyên là một họ các bài toán tối ưu hóa tổ hợp có ứng dụng thực tiễn rộng rãi trong thiết kế VLSI, kiến trúc viễn thông và lập lịch \cite{chung1988labelings}. Trong họ bài toán này, N-Queens nổi lên như một bài toán nền tảng mang tính chuẩn mực để thử nghiệm sức mạnh của các thuật toán tìm kiếm.
@@ -94,10 +106,10 @@ Dưới nền, CP giải quyết \texttt{AddAllDifferent} bằng thuật toán l
 
 \section{Computational Experiments and Bottleneck Analysis}
 \subsection{Experimental Setup}
-Các thực nghiệm được chạy đo lường trên các mốc $N \in \{8, 10, 15, 20, 25, 30\}$. Ba họ phương pháp giải chính xác được đối chuẩn: (i) SAT Solving với 5 chuẩn mã hóa dùng bộ giải Glucose3 (kiến trúc CDCL); (ii) Constraint Programming với CP-SAT (Google OR-Tools) và CPLEX CP Optimizer (IBM); (iii) Integer Linear Programming với CPLEX MIP (IBM) và Gurobi. Mỗi cấu hình được chạy lặp lại 3 lần và lấy giá trị trung bình nhằm triệt tiêu nhiễu đo lường. Mọi bộ giải đều được chạy đơn luồng (single-thread) để đảm bảo so sánh công bằng. Nghiệm đầu ra của \emph{tất cả} các phương pháp --- không chỉ riêng SAT --- đều được kiểm chứng độc lập bằng một hàm hậu kiểm dùng chung (đủ $N$ quân, không trùng hàng, cột và đường chéo); trong toàn bộ $54$ cấu hình chạy thành công, $100\%$ cho nghiệm hợp lệ. Thời gian được tách thành hai thành phần: thời gian sinh mô hình (Python) và thời gian giải (solver).
+Các thực nghiệm được chạy đo lường trên các mốc $N \in \{8, 10, 15, 20, 25, 30\}$, sau đó mở rộng lên hai mốc lớn $N=40$ và $N=50$ nhằm kiểm chứng khả năng mở rộng. Ba họ phương pháp giải chính xác được đối chuẩn: (i) SAT Solving với 5 chuẩn mã hóa dùng bộ giải Glucose3 (kiến trúc CDCL); (ii) Constraint Programming với CP-SAT (Google OR-Tools) và CPLEX CP Optimizer (IBM); (iii) Integer Linear Programming với CPLEX MIP (IBM) và Gurobi. Tại các mốc $N \leq 30$, mỗi cấu hình được chạy lặp lại 3 lần và lấy giá trị trung bình nhằm triệt tiêu nhiễu đo lường; riêng hai mốc mở rộng $N=40$ và $N=50$ chỉ chạy 1 lần do giới hạn thời gian tính toán của từng bộ giải (tối đa $90$ giây mỗi lần). Mọi bộ giải đều được chạy đơn luồng (single-thread) để đảm bảo so sánh công bằng. Nghiệm đầu ra của \emph{tất cả} các phương pháp --- không chỉ riêng SAT --- đều được kiểm chứng độc lập bằng một hàm hậu kiểm dùng chung (đủ $N$ quân, không trùng hàng, cột và đường chéo); trong toàn bộ $54$ cấu hình chạy thành công, $100\%$ cho nghiệm hợp lệ. Thời gian được tách thành hai thành phần: thời gian sinh mô hình (Python) và thời gian giải (solver).
 
 \subsection{Encoding-Size vs Runtime Analysis}
-Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý thuyết Toán học: Khi $N$ tăng lên 30, thuật toán Binomial sinh ra một file khổng lồ chứa tới 43.240 mệnh đề. Ngược lại, Sequential, Product và Binary duy trì bộ CNF nhỏ gọn hơn đáng kể (dao động từ 10.122 đến 17.286 mệnh đề), nhờ cơ chế nén bằng biến phụ.
+Kết quả thực nghiệm tại Hình \ref{fig:clauses} xác nhận đúng lý thuyết Toán học: Khi $N$ tăng lên 30, thuật toán Binomial sinh ra một file khổng lồ chứa tới 43.255 mệnh đề. Ngược lại, Sequential, Product và Binary duy trì bộ CNF nhỏ gọn hơn đáng kể (dao động từ 10.137 đến 17.301 mệnh đề), nhờ cơ chế nén bằng biến phụ.
 
 \begin{figure}[htbp]
     \centering
@@ -112,25 +124,25 @@ Bảng \ref{tab:runtime} trình bày chi tiết thời gian tại mốc $N=30$. 
     \centering
     \caption{Thời gian thực thi tại $N=30$ (trung bình 3 lần lặp), đơn vị giây.}
     \label{tab:runtime}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{l S[table-format=6.0] S[table-format=4.0] S[table-format=1.5] S[table-format=2.5]}
         \toprule
         \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
         \midrule
-        Binomial  & 43.255 &   900 & 0,04101 & 0,01291 \\
-        Sequential & 10.137 & 4.322 & 0,00266 & 0,20078 \\
-        Binary    & 17.301 & 1.666 & 0,01763 & 6,53435 \\
-        Commander & 13.373 & 1.606 & 0,00367 & 0,24196 \\
-        Product   & 10.215 & 2.426 & 0,00290 & 11,86967 \\
+        Binomial  & 43255 &   900 & 0.04101 & 0.01291 \\
+        Sequential & 10137 & 4322 & 0.00266 & 0.20078 \\
+        Binary    & 17301 & 1666 & 0.01763 & 6.53435 \\
+        Commander & 13373 & 1606 & 0.00367 & 0.24196 \\
+        Product   & 10215 & 2426 & 0.00290 & 11.86967 \\
         \midrule
-        CP-SAT    & --     &   --  & 0,00050 & 0,04139 \\
-        CPLEX-CP  & --     &   --  & 0,00066 & 0,02229 \\
-        CPLEX-MIP & --     &   --  & 0,01402 & 0,00617 \\
-        Gurobi-MIP& --     &   --  & 0,00350 & 0,00066 \\
+        CP-SAT    & {--}     &   {--}  & 0.00050 & 0.04139 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00066 & 0.02229 \\
+        CPLEX-MIP & {--}     &   {--}  & 0.01402 & 0.00617 \\
+        Gurobi-MIP& {--}     &   {--}  & 0.00350 & 0.00066 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Bảng \ref{tab:runtime} làm nổi bật một quan sát quan trọng: với Binomial, phần lớn thời gian ($0,041s$ trên tổng $0,054s$, tức khoảng $76\%$) nằm ở bước sinh mệnh đề bằng Python chứ không phải ở bộ giải. Hiện tượng tương tự cũng xuất hiện ở CPLEX-MIP, nơi chi phí dựng mô hình ($0,014s$) lớn hơn cả thời gian giải ($0,006s$). Điều này cho thấy khi đánh giá các encoding, cần phân biệt rõ chi phí \emph{mô hình hóa} và chi phí \emph{giải}.
+Bảng \ref{tab:runtime} làm nổi bật một quan sát quan trọng: với Binomial, phần lớn thời gian ($0.041s$ trên tổng $0.054s$, tức khoảng $76\%$) nằm ở bước sinh mệnh đề bằng Python chứ không phải ở bộ giải. Hiện tượng tương tự cũng xuất hiện ở CPLEX-MIP, nơi chi phí dựng mô hình ($0.014s$) lớn hơn cả thời gian giải ($0.006s$). Điều này cho thấy khi đánh giá các encoding, cần phân biệt rõ chi phí \emph{mô hình hóa} và chi phí \emph{giải}.
 
 \subsection{Runtime Bottleneck Analysis}
 Sự tập trung vào Hình \ref{fig:runtime} phơi bày một nghịch lý thắt cổ chai (bottleneck) nghiêm trọng của SAT Solving: không gian mệnh đề nhỏ không đồng nghĩa với thời gian thực thi nhanh.
@@ -163,42 +175,44 @@ Tại mốc khắc nghiệt hơn $N=50$, xu hướng này tiếp tục được 
 
 \begin{table}[htbp]
     \centering
-    \caption{Kết quả tại mốc $N=40$ (1 lần chạy, giới hạn $90s$), đơn vị giây. Ký hiệu ``--'' là hết thời gian mà chưa tìm ra nghiệm.}
+    \caption{Kết quả tại mốc $N=40$ (1 lần chạy, giới hạn $90s$), đơn vị giây. Ký hiệu ``--'' biểu thị không có kết quả: hết thời gian, hoặc vượt giới hạn kích thước mô hình/license.}
     \label{tab:scalability}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{l S[table-format=6.0] S[table-format=4.0] S[table-format=1.5] S[table-format=2.5]}
         \toprule
         \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
         \midrule
-        Binomial  & 103.540 & 1.600 & 0,03418 & 0,04555 \\
-        Sequential & 18.312 & 7.762 & 0,00266 & 2,62234 \\
-        Binary    & 35.604 & 2.776 & 0,00600 & 59,88019 \\
-        Commander & 26.116 & 2.724 & 0,00400 & 6,92297 \\
-        Product   & 18.484 & 3.998 & 0,02035 & -- (hết giờ) \\
+        Binomial  & 103540 & 1600 & 0.03418 & 0.04555 \\
+        Sequential & 18312 & 7762 & 0.00266 & 2.62234 \\
+        Binary    & 35604 & 2776 & 0.00600 & 59.88019 \\
+        Commander & 26116 & 2724 & 0.00400 & 6.92297 \\
+        Product   & 18484 & 3998 & 0.02035 & {-- (hết giờ)} \\
         \midrule
-        CP-SAT    & --     &   --  & 0,00847 & 0,38328 \\
-        CPLEX-CP  & --     &   --  & 0,00301 & 0,23977 \\
-        CPLEX-MIP & --     &   --  & --      & -- (vượt giới hạn 1000 biến) \\
-        Gurobi-MIP& --     &   --  & 0,04466 & 0,10842 \\
+        CP-SAT    & {--}     &   {--}  & 0.00847 & 0.38328 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00301 & 0.23977 \\
+        CPLEX-MIP & {--}     &   {--}  & {--}      & {-- (vượt giới hạn 1000 biến)} \\
+        Gurobi-MIP& {--}     &   {--}  & 0.04466 & 0.10842 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 \begin{table}[htbp]
     \centering
-    \caption{Kết quả tại mốc $N=50$ (1 lần chạy, giới hạn $90s$), đơn vị giây. ``--'' là hết thời gian mà chưa tìm ra nghiệm.}
+    \caption{Kết quả tại mốc $N=50$ (1 lần chạy, giới hạn $90s$), đơn vị giây. Ký hiệu ``--'' biểu thị không có kết quả: hết thời gian, hoặc vượt giới hạn kích thước mô hình/license.}
     \label{tab:scalability50}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{l S[table-format=6.0] S[table-format=5.0] S[table-format=1.5] S[table-format=2.5]}
         \toprule
         \textbf{Encoding / Solver} & \textbf{Mệnh đề} & \textbf{Biến} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
         \midrule
-        Binomial  & 203.425 & 2.500 & 0,07904 & 0,19481 \\
-        Sequential & 28.887 & 12.202 & 0,00400 & 27,89312 \\
-        Binary    & 57.219 & 4.036 & 0,02900 & -- (hết giờ) \\
-        Commander & 44.905 & 4.114 & 0,00700 & 7,13475 \\
-        Product   & 29.353 & 5.910 & 0,00399 & -- (hết giờ) \\
+        Binomial  & 203425 & 2500 & 0.07904 & 0.19481 \\
+        Sequential & 28887 & 12202 & 0.00400 & 27.89312 \\
+        Binary    & 57219 & 4036 & 0.02900 & {-- (hết giờ)} \\
+        Commander & 44905 & 4114 & 0.00700 & 7.13475 \\
+        Product   & 29353 & 5910 & 0.00399 & {-- (hết giờ)} \\
         \midrule
-        CP-SAT    & --     &   --  & 0,00100 & 0,14469 \\
-        CPLEX-CP  & --     &   --  & 0,00100 & 0,02917 \\
+        CP-SAT    & {--}     &   {--}  & 0.00100 & 0.14469 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00100 & 0.02917 \\
+        CPLEX-MIP & {--}     &   {--}  & {--}      & {-- (vượt giới hạn 1000 biến)} \\
+        Gurobi-MIP& {--}     &   {--}  & {--}      & {-- (vượt hạn mức license)} \\
         \bottomrule
     \end{tabular}
 \end{table}
