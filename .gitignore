@@ -27,6 +27,14 @@ report/*.fdb_latexmk
 report/*.synctex.gz
 report/*.bbl
 report/*.blg
+report/*.xdv
+report/*.abs
+report/*.bcf
+report/*.run.xml
+
+# Thư mục tạm khi render PDF sang ảnh để kiểm tra
+results/_new/
+results/_check/
 
 # File kiểm tra tạm thời
 report/_check.py

@@ -19,6 +19,8 @@ Ngoài ra, dự án tích hợp thêm các bộ giải chính xác khác để �
 - **Constraint Programming**: CP-SAT (Google OR-Tools) và CPLEX CP Optimizer (IBM).
 - **Integer Linear Programming (ILP/MIP)**: CPLEX MIP (IBM) và Gurobi.
 
+> **Ghi chú về PySAT encoders:** Ngoài 5 chuẩn mã hóa tự cài đặt trong `encoder.py`, dự án còn cung cấp `src/pysat_encoder.py` — phiên bản mã hóa AMO **gọi trực tiếp thư viện PySAT** thông qua `pysat.card.CardEnc` / `pysat.card.EncType`. Module này ánh xạ 4 chuẩn yêu cầu lên các encoder chuẩn của PySAT (`pairwise`, `seqcounter`, `bitwise`, `cardnetwrk`, `mtotalizer`) để đối chiếu chéo với phần cài đặt thủ công.
+
 Tất cả các encoding SAT đều được áp dụng thêm kỹ thuật **phá đối xứng (symmetry breaking)** — ấn định quân hậu ở hàng đầu nằm ở nửa trái bàn cờ — giúp cắt giảm một nửa không gian tìm kiếm.
 
 Hệ thống benchmark được thiết kế với tính năng **timeout độc lập qua đa tiến trình (multiprocessing)** để ngắt an toàn các bộ giải SAT chạy bằng thư viện C-extension mà không bị kẹt GIL trên Windows.
@@ -84,7 +86,8 @@ Dữ liệu thô của mốc lớn được lưu tại `results/benchmark_large_
 ```text
 NQueens_SAT_Project/
 ├── src/
-│   ├── encoder.py          # Chứa 5 thuật toán mã hóa AMO sang CNF
+│   ├── encoder.py          # Chứa 5 thuật toán mã hóa AMO sang CNF (tự cài đặt)
+│   ├── pysat_encoder.py    # Mã hóa AMO qua thư viện PySAT (pysat.card.CardEnc)
 │   ├── solver.py           # Tích hợp PySAT (Glucose3 cho SAT)
 │   ├── cp_solver.py        # Tích hợp Google OR-Tools (CP-SAT)
 │   ├── cplex_mip_solver.py # Tích hợp IBM CPLEX (MIP/ILP)
@@ -97,7 +100,8 @@ NQueens_SAT_Project/
 │   ├── chart_runtime_comparison.png # Biểu đồ thời gian (thang log)
 │   └── chart_clauses_comparison.png # Biểu đồ số lượng mệnh đề
 ├── report/
-│   └── main.tex        # Báo cáo học thuật LaTeX chuẩn Elsevier
+│   ├── main.tex        # Báo cáo học thuật LaTeX chuẩn Elsevier
+│   └── main.pdf        # Báo cáo kết quả bài tập lớn (đã biên dịch PDF)
 ├── docs/
 │   └── SETUP_CPLEX_CP.md # Hướng dẫn cài engine CPLEX CP Optimizer
 ├── requirements.txt
@@ -138,3 +142,21 @@ python src/benchmark.py --sizes 30 --repeats 5
 Dữ liệu sẽ được lưu tự động vào thư mục `results/`.
 
 > **Lưu ý về CPLEX-CP và Gurobi:** `cplex-mip` chạy được ngay với gói `cplex` trên pip. Riêng `cplex-cp` cần engine **CP Optimizer** của IBM ILOG CPLEX Optimization Studio, còn Gurobi cần license hợp lệ — nếu thiếu, benchmark sẽ tự động bỏ qua phương pháp đó một cách êm thẩm. Xem hướng dẫn tại [`docs/SETUP_CPLEX_CP.md`](docs/SETUP_CPLEX_CP.md).
+
+**Bước 3 (tùy chọn): Biên dịch báo cáo LaTeX**
+
+Báo cáo `report/main.tex` dùng template Elsevier `cas-sc` và **phải** biên dịch bằng **XeLaTeX** (không dùng pdfLaTeX vì cần hỗ trợ Unicode tiếng Việt):
+
+```bash
+cd report
+xelatex main.tex
+xelatex main.tex   # chạy 2 lần để cập nhật mục lục / tham chiếu chéo
+```
+
+Hoặc dùng Tectonic (tự tải package, không cần cài TeX distribution đầy đủ):
+
+```bash
+tectonic -X compile report/main.tex --keep-logs
+```
+
+> **Lưu ý về font toán Unicode:** `main.tex` nạp `fontspec` + `unicode-math` để các ký hiệu `∈`, `∀`, `≤`, `√`, `…` hiển thị đúng dưới XeLaTeX. Nếu gặp lỗi ``Control sequence \not= already defined'' hoặc ký tự toán in ra thành hộp/rác (``Missing character ... in font [lmroman...]''), hãy kiểm tra rằng phần gỡ `\not=` ngay sau `\documentclass` và lệnh `\usepackage{unicode-math}` vẫn còn nguyên trong preamble.

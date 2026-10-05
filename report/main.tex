@@ -1,15 +1,22 @@
 \documentclass[a4paper,fleqn]{cas-sc}
 
-\usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{hyperref}
-% Dùng XeLaTeX để hỗ trợ tiếng Việt Unicode chuẩn không lỗi Toán
+\makeatletter
+\@ifundefined{not=}{}{\expandafter\let\csname not=\endcsname\relax}
+\@ifundefined{not<}{}{\expandafter\let\csname not<\endcsname\relax}
+\@ifundefined{not>}{}{\expandafter\let\csname not>\endcsname\relax}
+\@ifundefined{not\string\|}{}{\expandafter\let\csname not\string\|\endcsname\relax}
+\makeatother
+
 \usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
 \usepackage{unicode-math}
+
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{float}
-% Định dạng số thập phân chuẩn khoa học (dấu chấm) cho các bảng kết quả
+
 \usepackage{siunitx}
 \sisetup{
     detect-all,
@@ -17,8 +24,16 @@
     group-minimum-digits = 5,
     output-decimal-marker = {.}
 }
+\usepackage{hyperref}
 
 \graphicspath{{../results/}{results/}}
+
+\makeatletter
+\@ifundefined{bibsep}{%
+  \newlength{\bibsep}%
+}{}%
+\makeatother
+\setlength{\bibsep}{0pt}
 
 \begin{document}
 
