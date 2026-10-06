@@ -21,6 +21,8 @@ Ngoài ra, dự án tích hợp thêm các bộ giải chính xác khác để �
 
 > **Ghi chú về PySAT encoders:** Ngoài 5 chuẩn mã hóa tự cài đặt trong `encoder.py`, dự án còn cung cấp `src/pysat_encoder.py` — phiên bản mã hóa AMO **gọi trực tiếp thư viện PySAT** thông qua `pysat.card.CardEnc` / `pysat.card.EncType`. Module này ánh xạ 5 chuẩn yêu cầu lên các encoder chuẩn của PySAT (`pairwise`, `seqcounter`, `bitwise`, `cardnetwrk`, `mtotalizer`) để đối chiếu chéo với phần cài đặt thủ công.
 
+> **Ghi chú về cross-solver:** Dự án còn hỗ trợ đối chuẩn **cùng một mô hình CNF trên nhiều bộ giải SAT** (Glucose3, Glucose4, CaDiCaL, MapleSAT...) thông qua cú pháp `<solver>:<encoding>`. Kết quả cho thấy thứ hạng giữa các bộ giải **đảo chiều tùy theo encoding**, củng cố luận điểm rằng hiệu năng đến từ sự tương thích giữa bộ giải và cấu trúc mã hóa.
+
 Tất cả các encoding SAT đều được áp dụng thêm kỹ thuật **phá đối xứng (symmetry breaking)** — ấn định quân hậu ở hàng đầu nằm ở nửa trái bàn cờ — giúp cắt giảm một nửa không gian tìm kiếm.
 
 Hệ thống benchmark được thiết kế với tính năng **timeout độc lập qua đa tiến trình (multiprocessing)** để ngắt an toàn các bộ giải SAT chạy bằng thư viện C-extension mà không bị kẹt GIL trên Windows.
@@ -142,7 +144,21 @@ Ví dụ, chỉ chạy lại mốc $N=30$ với 5 lần lặp:
 python src/benchmark.py --sizes 30 --repeats 5
 ```
 
+### Đối chuẩn chéo nhiều bộ giải SAT (Cross-Solver)
+
+Để tách bạch ảnh hưởng của **bộ giải** (solver) khỏi ảnh hưởng của **chuẩn mã hóa** (encoding), `--methods` hỗ trợ cú pháp `<solver>:<encoding>`. Các bộ giải SAT được PySAT đóng gói sẵn và đã kiểm chứng chạy được gồm:
+`glucose3`, `glucose4`, `cadical153`, `cadical195`, `lingeling`, `minisat22`, `maplesat`.
+
+Ví dụ chạy cùng encoding `sequential` trên 4 bộ giải khác nhau tại $N=30$:
+```bash
+python src/benchmark.py --sizes 30 --repeats 1 --methods \
+    "glucose3:sequential" "cadical195:sequential" "glucose4:sequential" "maplesat:sequential" \
+    --out cross_solver_benchmark.csv --no-append
+```
+
 Dữ liệu sẽ được lưu tự động vào thư mục `results/`.
+
+> **Lưu ý về bundle `kissat404`:** bản Kissat đi kèm PySAT có lỗi treo (hang) trên nền Windows của môi trường này (đã kiểm chứng: treo ngay cả với CNF tầm thường), nên đã được loại khỏi danh sách cross-solver. Trên Linux/macOS bundle này thường chạy bình thường.
 
 > **Lưu ý về CPLEX-CP và Gurobi:** `cplex-mip` chạy được ngay với gói `cplex` trên pip. Riêng `cplex-cp` cần engine **CP Optimizer** của IBM ILOG CPLEX Optimization Studio, còn Gurobi cần license hợp lệ — nếu thiếu, benchmark sẽ tự động bỏ qua phương pháp đó một cách êm thẩm. Xem hướng dẫn tại [`docs/SETUP_CPLEX_CP.md`](docs/SETUP_CPLEX_CP.md).
 

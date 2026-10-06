@@ -21,6 +21,10 @@ sys.stdout.reconfigure(encoding='utf-8')
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'results')
 
+AVAILABLE_SAT_SOLVERS = [
+    'glucose3', 'glucose4', 'cadical153', 'cadical195',
+    'lingeling', 'minisat22', 'maplesat',
+]
 DEFAULT_SIZES = [10, 15, 20, 25, 30]
 DEFAULT_METHODS = ["binomial", "sequential", "binary", "commander", "product", "cp-sat", "cplex-mip", "cplex-cp", "gurobi-mip"]
 CSV_COLUMNS = [
@@ -53,6 +57,13 @@ def record_result(writer, results, n, alg_label, num_vars, num_clauses,
     })
 
 def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
+    effective_solver = solver_name
+    if ':' in enc_name:
+        solver_prefix, enc_name = enc_name.split(':', 1)
+        if solver_prefix not in AVAILABLE_SAT_SOLVERS:
+            raise ValueError(f"SAT solver không hỗ trợ: {solver_prefix}")
+        effective_solver = solver_prefix
+
     use_pysat = enc_name.startswith('pysat-')
     base_enc = enc_name[6:] if use_pysat else enc_name
 
@@ -73,7 +84,7 @@ def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
         gen_times.append(time.time() - start_gen)
         num_clauses = len(clauses)
         solver = SATSolverWrapper(clauses)
-        is_sat, solve_time = solver.solve(solver_name, time_limit_sec=timeout_sec)
+        is_sat, solve_time = solver.solve(effective_solver, time_limit_sec=timeout_sec)
         solve_times.append(solve_time)
         if not is_sat:
             break
@@ -105,6 +116,12 @@ def run_benchmark(args):
                     alg_label = "CPLEX-MIP"
                 elif enc_name == "cplex-cp":
                     alg_label = "CPLEX-CP"
+                elif enc_name == "gurobi-mip":
+                    alg_label = "Gurobi-MIP"
+                elif ":" in enc_name:
+                    solver_prefix, enc_part = enc_name.split(":", 1)
+                    enc_display = enc_part[6:].capitalize() if enc_part.startswith("pysat-") else enc_part.capitalize()
+                    alg_label = f"{solver_prefix}-{enc_display}"
                 elif enc_name.startswith("pysat-"):
                     alg_label = "PySAT-" + enc_name[6:].capitalize()
                 else:
@@ -166,7 +183,8 @@ def run_benchmark(args):
                                   "", None, error_msg)
 
     print(f"\n=> Thực nghiệm hoàn tất! Dữ liệu lưu tại: {csv_path}")
-    plot_charts(results)
+    is_cross_solver = any(':' in m for m in args.methods)
+    plot_charts([] if is_cross_solver else results)
 
 def plot_charts(results):
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -192,8 +210,6 @@ def plot_charts(results):
     df_all['Error'] = df_all['Error'].fillna('')
     df_all['Algorithm'] = df_all['Algorithm'].replace({'Gurobi-mip': 'Gurobi-MIP', 'gurobi-mip': 'Gurobi-MIP'})
 
-    # Loại bỏ các lần chạy KHÔNG thành công: có Error, hoặc Is_SAT=False (hết giờ).
-    # Điều này tránh vẽ các điểm sentinel 90s (timeout) như thể là dữ liệu runtime hợp lệ.
     is_sat_col = df_all.get('Is_SAT', df_all.get('Is_Sat'))
     if is_sat_col is not None:
         sat_ok = is_sat_col.astype(str).str.strip().str.lower() == 'true'

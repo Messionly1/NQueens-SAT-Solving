@@ -7,10 +7,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from encoder import NQueensEncoder
 from solver import SATSolverWrapper
 
-
 try:
     from cp_solver import CPQueensSolver
-except ImportError:  # OR-Tools chưa được cài
+except ImportError:
     CPQueensSolver = None
 
 
@@ -33,6 +32,18 @@ class TestNQueensSolvers(unittest.TestCase):
         self.assertTrue(is_sat)
         self.assertGreaterEqual(solve_time, 0.0)
         self.assertTrue(solver.verify_solution())
+
+    def test_cross_solver_consistency(self):
+        from benchmark import AVAILABLE_SAT_SOLVERS
+        encoder = NQueensEncoder(n=6)
+        clauses, _ = encoder.generate_clauses(enc_type="sequential")
+        for solver_name in AVAILABLE_SAT_SOLVERS:
+            with self.subTest(solver=solver_name):
+                solver = SATSolverWrapper(clauses)
+                is_sat, _ = solver.solve(solver_name=solver_name, time_limit_sec=30.0)
+                self.assertTrue(is_sat, f"{solver_name} không tìm được nghiệm")
+                self.assertTrue(encoder.verify_solution(solver.get_model(), n=6),
+                                f"Nghiệm của {solver_name} không hợp lệ")
 
 
 if __name__ == "__main__":
