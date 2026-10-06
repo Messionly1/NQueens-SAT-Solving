@@ -9,6 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 from encoder import NQueensEncoder
+from pysat_encoder import PySatNQueensEncoder
 from solver import SATSolverWrapper
 from cp_solver import CPQueensSolver
 from cplex_mip_solver import CplexMIPSolver
@@ -52,6 +53,9 @@ def record_result(writer, results, n, alg_label, num_vars, num_clauses,
     })
 
 def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
+    use_pysat = enc_name.startswith('pysat-')
+    base_enc = enc_name[6:] if use_pysat else enc_name
+
     gen_times, solve_times = [], []
     num_vars = num_clauses = 0
     is_sat = None
@@ -59,9 +63,13 @@ def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
     encoder = None
     solver = None
     for _ in range(repeats):
-        encoder = NQueensEncoder(n)
         start_gen = time.time()
-        clauses, num_vars = encoder.generate_clauses(enc_type=enc_name)
+        if use_pysat:
+            encoder = PySatNQueensEncoder(n, encoding=base_enc)
+            clauses, num_vars = encoder.generate_clauses()
+        else:
+            encoder = NQueensEncoder(n)
+            clauses, num_vars = encoder.generate_clauses(enc_type=base_enc)
         gen_times.append(time.time() - start_gen)
         num_clauses = len(clauses)
         solver = SATSolverWrapper(clauses)
@@ -97,6 +105,8 @@ def run_benchmark(args):
                     alg_label = "CPLEX-MIP"
                 elif enc_name == "cplex-cp":
                     alg_label = "CPLEX-CP"
+                elif enc_name.startswith("pysat-"):
+                    alg_label = "PySAT-" + enc_name[6:].capitalize()
                 else:
                     alg_label = enc_name.capitalize()
                 
@@ -159,19 +169,46 @@ def run_benchmark(args):
     plot_charts(results)
 
 def plot_charts(results):
-    if not results:
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    dfs = []
+    if results:
+        dfs.append(pd.DataFrame(results))
+
+    for fname in ['sat_vs_cp_benchmark.csv', 'benchmark_large_N.csv', 'benchmark_large_N_50.csv']:
+        path = os.path.join(RESULTS_DIR, fname)
+        if os.path.exists(path):
+            try:
+                df_part = pd.read_csv(path)
+                df_part.rename(columns={'Board_Size': 'N', 'Runtime(s)': 'Time'}, inplace=True)
+                dfs.append(df_part)
+            except Exception:
+                pass
+
+    if not dfs:
         print("=> Không có dữ liệu để vẽ biểu đồ.")
         return
-    os.makedirs(RESULTS_DIR, exist_ok=True)
-    df = pd.DataFrame(results)
-    df = df[df['Error'] == ""]
-    if df.empty:
+
+    df_all = pd.concat(dfs, ignore_index=True)
+    df_all['Error'] = df_all['Error'].fillna('')
+    df_all['Algorithm'] = df_all['Algorithm'].replace({'Gurobi-mip': 'Gurobi-MIP', 'gurobi-mip': 'Gurobi-MIP'})
+
+    # Loại bỏ các lần chạy KHÔNG thành công: có Error, hoặc Is_SAT=False (hết giờ).
+    # Điều này tránh vẽ các điểm sentinel 90s (timeout) như thể là dữ liệu runtime hợp lệ.
+    is_sat_col = df_all.get('Is_SAT', df_all.get('Is_Sat'))
+    if is_sat_col is not None:
+        sat_ok = is_sat_col.astype(str).str.strip().str.lower() == 'true'
+    else:
+        sat_ok = pd.Series(True, index=df_all.index)
+    df_clean = df_all[(df_all['Error'] == '') & sat_ok].drop_duplicates(
+        subset=['N', 'Algorithm'], keep='last')
+
+    if df_clean.empty:
         print("=> Toàn bộ kết quả đều lỗi, bỏ qua bước vẽ biểu đồ.")
         return
 
     plt.figure(figsize=(10, 6))
-    for alg in df['Algorithm'].unique():
-        subset = df[df['Algorithm'] == alg].sort_values('N')
+    for alg in sorted(df_clean['Algorithm'].unique()):
+        subset = df_clean[df_clean['Algorithm'] == alg].sort_values('N')
         plt.plot(subset['N'], subset['Time'], marker='o', label=alg, linewidth=2)
     plt.yscale('log')
     plt.title('Runtime Comparison (SAT vs CP vs MIP) — log scale')
@@ -181,10 +218,12 @@ def plot_charts(results):
     plt.grid(True, which='both', alpha=0.3)
     plt.savefig(os.path.join(RESULTS_DIR, 'chart_runtime_comparison.png'), dpi=150, bbox_inches='tight')
     plt.close()
-    df_sat = df[~df['Algorithm'].isin(['CP-SAT', 'CPLEX-MIP', 'CPLEX-CP'])]
+
+    non_sat = ['CP-SAT', 'CPLEX-MIP', 'CPLEX-CP', 'Gurobi-MIP', 'gurobi-mip']
+    df_sat = df_clean[~df_clean['Algorithm'].str.upper().isin([x.upper() for x in non_sat])]
     if not df_sat.empty:
         plt.figure(figsize=(10, 6))
-        for alg in df_sat['Algorithm'].unique():
+        for alg in sorted(df_sat['Algorithm'].unique()):
             subset = df_sat[df_sat['Algorithm'] == alg].sort_values('N')
             plt.plot(subset['N'], subset['Clauses'], marker='s', label=alg, linewidth=2)
         plt.title('Clauses Generation Comparison (SAT Encodings)')

@@ -19,7 +19,7 @@ Ngoài ra, dự án tích hợp thêm các bộ giải chính xác khác để �
 - **Constraint Programming**: CP-SAT (Google OR-Tools) và CPLEX CP Optimizer (IBM).
 - **Integer Linear Programming (ILP/MIP)**: CPLEX MIP (IBM) và Gurobi.
 
-> **Ghi chú về PySAT encoders:** Ngoài 5 chuẩn mã hóa tự cài đặt trong `encoder.py`, dự án còn cung cấp `src/pysat_encoder.py` — phiên bản mã hóa AMO **gọi trực tiếp thư viện PySAT** thông qua `pysat.card.CardEnc` / `pysat.card.EncType`. Module này ánh xạ 4 chuẩn yêu cầu lên các encoder chuẩn của PySAT (`pairwise`, `seqcounter`, `bitwise`, `cardnetwrk`, `mtotalizer`) để đối chiếu chéo với phần cài đặt thủ công.
+> **Ghi chú về PySAT encoders:** Ngoài 5 chuẩn mã hóa tự cài đặt trong `encoder.py`, dự án còn cung cấp `src/pysat_encoder.py` — phiên bản mã hóa AMO **gọi trực tiếp thư viện PySAT** thông qua `pysat.card.CardEnc` / `pysat.card.EncType`. Module này ánh xạ 5 chuẩn yêu cầu lên các encoder chuẩn của PySAT (`pairwise`, `seqcounter`, `bitwise`, `cardnetwrk`, `mtotalizer`) để đối chiếu chéo với phần cài đặt thủ công.
 
 Tất cả các encoding SAT đều được áp dụng thêm kỹ thuật **phá đối xứng (symmetry breaking)** — ấn định quân hậu ở hàng đầu nằm ở nửa trái bàn cờ — giúp cắt giảm một nửa không gian tìm kiếm.
 
@@ -99,6 +99,9 @@ NQueens_SAT_Project/
 │   ├── sat_vs_cp_benchmark.csv      # Dữ liệu thực nghiệm đầy đủ (đã làm sạch)
 │   ├── chart_runtime_comparison.png # Biểu đồ thời gian (thang log)
 │   └── chart_clauses_comparison.png # Biểu đồ số lượng mệnh đề
+├── tests/
+│   ├── test_encoder.py    # Kiểm thử tự động các thuật toán mã hóa (handwritten & PySAT)
+│   └── test_solvers.py    # Kiểm thử tự động các bộ giải (SAT & CP-SAT)
 ├── report/
 │   ├── main.tex        # Báo cáo học thuật LaTeX chuẩn Elsevier
 │   └── main.pdf        # Báo cáo kết quả bài tập lớn (đã biên dịch PDF)
