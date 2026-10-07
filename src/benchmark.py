@@ -23,7 +23,7 @@ RESULTS_DIR = os.path.join(PROJECT_ROOT, 'results')
 
 AVAILABLE_SAT_SOLVERS = [
     'glucose3', 'glucose4', 'cadical153', 'cadical195',
-    'lingeling', 'minisat22', 'maplesat',
+    'lingeling', 'minisat22', 'maplesat', 'cms',
 ]
 DEFAULT_SIZES = [10, 15, 20, 25, 30]
 DEFAULT_METHODS = ["binomial", "sequential", "binary", "commander", "product", "cp-sat", "cplex-mip", "cplex-cp", "gurobi-mip"]
@@ -74,14 +74,14 @@ def benchmark_sat(n, enc_name, solver_name, repeats, timeout_sec=100.0):
     encoder = None
     solver = None
     for _ in range(repeats):
-        start_gen = time.time()
+        start_gen = time.perf_counter()
         if use_pysat:
             encoder = PySatNQueensEncoder(n, encoding=base_enc)
             clauses, num_vars = encoder.generate_clauses()
         else:
             encoder = NQueensEncoder(n)
             clauses, num_vars = encoder.generate_clauses(enc_type=base_enc)
-        gen_times.append(time.time() - start_gen)
+        gen_times.append(time.perf_counter() - start_gen)
         num_clauses = len(clauses)
         solver = SATSolverWrapper(clauses)
         is_sat, solve_time = solver.solve(effective_solver, time_limit_sec=timeout_sec)
@@ -126,7 +126,7 @@ def run_benchmark(args):
                     alg_label = "PySAT-" + enc_name[6:].capitalize()
                 else:
                     alg_label = enc_name.capitalize()
-                
+
                 try:
                     if enc_name in ["cp-sat", "cplex-mip", "cplex-cp", "gurobi-mip"]:
                         gen_times, solve_times = [], []
@@ -134,7 +134,7 @@ def run_benchmark(args):
                         timed_out = False
                         active_solver = None
                         for _ in range(args.repeats):
-                            start_gen = time.time()
+                            start_gen = time.perf_counter()
                             if enc_name == "cp-sat":
                                 active_solver = CPQueensSolver(n)
                             elif enc_name == "cplex-mip":
@@ -144,7 +144,7 @@ def run_benchmark(args):
                             elif enc_name == "gurobi-mip":
                                 active_solver = GurobiMIPSolver(n)
 
-                            gen_times.append(time.time() - start_gen)
+                            gen_times.append(time.perf_counter() - start_gen)
                             is_sat, solve_time = active_solver.solve(time_limit_sec=args.timeout)
                             solve_times.append(solve_time)
                             timed_out = getattr(active_solver, 'timed_out', False)

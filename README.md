@@ -147,14 +147,18 @@ python src/benchmark.py --sizes 30 --repeats 5
 ### Đối chuẩn chéo nhiều bộ giải SAT (Cross-Solver)
 
 Để tách bạch ảnh hưởng của **bộ giải** (solver) khỏi ảnh hưởng của **chuẩn mã hóa** (encoding), `--methods` hỗ trợ cú pháp `<solver>:<encoding>`. Các bộ giải SAT được PySAT đóng gói sẵn và đã kiểm chứng chạy được gồm:
-`glucose3`, `glucose4`, `cadical153`, `cadical195`, `lingeling`, `minisat22`, `maplesat`.
+`glucose3`, `glucose4`, `cadical153`, `cadical195`, `lingeling`, `minisat22`, `maplesat`, `cms` (CryptoMiniSAT5).
 
-Ví dụ chạy cùng encoding `sequential` trên 4 bộ giải khác nhau tại $N=30$:
+> **Ghi chú CryptoMiniSAT5:** PySAT đóng gói CryptoMiniSAT5 dưới tên `cms`, nhưng cần cài thêm package `pycryptosat` (đã được khai báo trong `requirements.txt`). Module `src/solver.py` cung cấp alias nên có thể dùng cả tên `cryptosat` hay `cms`.
+
+Ví dụ chạy cùng encoding `sequential` trên 5 bộ giải khác nhau tại $N=30$:
 ```bash
 python src/benchmark.py --sizes 30 --repeats 1 --methods \
-    "glucose3:sequential" "cadical195:sequential" "glucose4:sequential" "maplesat:sequential" \
+    "glucose3:sequential" "cadical195:sequential" "glucose4:sequential" "maplesat:sequential" "cms:sequential" \
     --out cross_solver_benchmark.csv --no-append
 ```
+
+Kết quả thực nghiệm (N=30) cho thấy **CryptoMiniSAT5 (`cms`) dẫn đầu ở cả hai encoding** — Binomial (`0.00105s`) và Sequential (`0.0447s`) — củng cố luận điểm rằng backend solver tạo khác biệt lớn trên cùng một mô hình CNF. Dữ liệu chi tiết tại `results/cross_solver_benchmark.csv`.
 
 Dữ liệu sẽ được lưu tự động vào thư mục `results/`.
 

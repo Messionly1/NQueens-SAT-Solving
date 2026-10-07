@@ -2,14 +2,24 @@ import time
 import multiprocessing
 from pysat.solvers import Solver
 
+SOLVER_ALIASES = {
+    'cryptosat': 'cms',
+    'cryptominisat': 'cms',
+    'cryptominisat5': 'cms',
+    'cms5': 'cms',
+}
+
+def _normalize_solver_name(solver_name: str) -> str:
+    return SOLVER_ALIASES.get(solver_name, solver_name)
+
 def _solve_worker(solver_name, clauses, result_queue):
-    solver = Solver(name=solver_name)
+    solver = Solver(name=_normalize_solver_name(solver_name))
     for clause in clauses:
         solver.add_clause(clause)
-        
-    start_time = time.time()
+
+    start_time = time.perf_counter()
     is_sat = solver.solve()
-    end_time = time.time()
+    end_time = time.perf_counter()
     
     model = solver.get_model() if is_sat else None
     solver.delete()
@@ -25,9 +35,9 @@ class SATSolverWrapper:
         q = ctx.Queue()
         p = ctx.Process(target=_solve_worker, args=(solver_name, self.clauses, q))
         
-        start_time = time.time()
+        start_time = time.perf_counter()
         p.start()
-        
+
         try:
             import queue
             is_sat, self.model, runtime = q.get(timeout=time_limit_sec)
@@ -40,7 +50,7 @@ class SATSolverWrapper:
         except Exception:
             p.terminate()
             p.join()
-            return False, time.time() - start_time
+            return False, time.perf_counter() - start_time
 
     def get_model(self):
         return self.model

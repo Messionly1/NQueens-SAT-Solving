@@ -1,0 +1,11 @@
+Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Runtime(s),Is_SAT,Solution_Valid,Error
+30,glucose3-Binomial,900,43255,0.005247,0.012020,0.017266,True,True,
+30,glucose4-Binomial,900,43255,0.030317,0.012401,0.042718,True,True,
+30,maplesat-Binomial,900,43255,0.004162,0.023793,0.027955,True,True,
+30,cadical195-Binomial,900,43255,0.004494,0.047551,0.052045,True,True,
+30,cms-Binomial,900,43255,0.003685,0.001051,0.004736,True,True,
+30,cadical195-Sequential,4322,10137,0.001326,0.131809,0.133135,True,True,
+30,glucose3-Sequential,4322,10137,0.001069,0.199963,0.201032,True,True,
+30,maplesat-Sequential,4322,10137,0.001339,0.523485,0.524824,True,True,
+30,glucose4-Sequential,4322,10137,0.001107,0.808520,0.809627,True,True,
+30,cms-Sequential,4322,10137,0.001134,0.044727,0.045861,True,True,
