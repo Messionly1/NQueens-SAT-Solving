@@ -25,17 +25,19 @@ class GurobiMIPSolver:
         for k in range(2 * n - 1):
             self.model.addConstr(gp.quicksum(self.x[i, k - i] for i in range(max(0, k - n + 1), min(n, k + 1))) <= 1)
 
-    def solve(self, time_limit_sec: float = 100.0):
+    def solve(self, time_limit_sec: float = 100.0, first_solution: bool = False):
         self.model.setParam("TimeLimit", time_limit_sec)
         self.model.setParam("Threads", 1)
-        
-        start_time = time.time()
+     
+        self.model.setParam("SolutionLimit", 1 if first_solution else 2000000000)
+
+        start_time = time.perf_counter()
         self.model.optimize()
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         runtime = end_time - start_time
-        
-        if self.model.Status == GRB.OPTIMAL:
+
+        if self.model.Status in (GRB.OPTIMAL, GRB.SOLUTION_LIMIT):
             is_sat = True
             self.solution = []
             for i in range(self.n):

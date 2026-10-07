@@ -28,14 +28,17 @@ class CplexMIPSolver:
                 self.model.add_constraint(
                     self.model.sum(self.x[i, j] for i, j in cells) <= 1)
 
-    def solve(self, time_limit_sec: float = 100.0):
+    def solve(self, time_limit_sec: float = 100.0, first_solution: bool = False):
         self.model.parameters.timelimit = time_limit_sec
         self.model.parameters.threads = 1
+      
+        if first_solution:
+            self.model.parameters.mip.limits.solutions = 1
         self.model.set_log_output(None)
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         solution = self.model.solve(log_output=False)
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         runtime = end_time - start_time
         is_sat = solution is not None

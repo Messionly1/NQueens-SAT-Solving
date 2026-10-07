@@ -1,9 +1,10 @@
-Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Runtime(s),Is_SAT,Solution_Valid,Error
-50,Binomial,2500,203425,0.079040,0.194811,0.273851,True,True,
-50,Sequential,12202,28887,0.003997,27.893120,27.897117,True,True,
-50,Binary,4036,57219,0.029001,90.000000,90.029001,False,,
-50,Commander,4114,44905,0.006999,7.134752,7.141750,True,True,
-50,Product,5910,29353,0.003992,90.000000,90.003992,False,,
-50,CP-SAT,0,0,0.001000,0.144689,0.145689,True,True,
-50,CPLEX-CP,0,0,0.001000,0.029174,0.030175,True,True,
-50,Gurobi-mip,0,0,0.000000,0.000000,0.000000,,,GurobiError: Model too large for size-limited license; visit https://gurobi.com/unrestricted for more information
+Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Solve_Std(s),Solve_Min(s),Solve_Max(s),Repeats_Done,Runtime(s),Is_SAT,Solution_Valid,Error
+50,Binomial,2500,203425,0.083848,0.203339,0.000791,0.202295,0.204211,3,0.287187,True,True,
+50,Commander,4114,44905,0.010872,15.933173,0.079029,15.839378,16.032705,3,15.944045,True,True,
+50,CP-SAT,0,0,0.002330,0.286260,0.012027,0.270169,0.299076,3,0.288590,True,True,
+50,CPLEX-CP,0,0,0.000844,0.028515,0.004691,0.024663,0.035119,3,0.029359,True,True,
+50,Sequential,12202,28887,0.005115,32.205651,0.000000,32.205651,32.205651,1,32.210766,True,True,
+50,Binary,4036,57219,0.041512,90.000000,0.000000,90.000000,90.000000,1,90.041512,False,,TIMEOUT
+50,Product,5910,29353,0.005482,90.000000,0.000000,90.000000,90.000000,1,90.005482,False,,TIMEOUT
+50,Gurobi-MIP,0,0,0.000000,0.000000,0.000000,0.000000,0.000000,0,0.000000,,,GurobiError: Model too large for size-limited license; visit https://gurobi.com/unrestricted for more information
+50,CPLEX-MIP,0,0,0.000000,0.000000,0.000000,0.000000,0.000000,0,0.000000,,,"DOcplexLimitsExceeded: **** Promotional version. Problem size limits (1000 vars, 1000 consts) exceeded, model has 2500 vars, 294 consts, CPLEX code=1016"

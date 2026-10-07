@@ -33,17 +33,18 @@ class CplexCPSolver:
         self.model.add(self.model.all_diff([self.q[i] - i for i in range(n)]))
         self.model.add(self.model.all_diff([self.q[i] + i for i in range(n)]))
 
-    def solve(self, time_limit_sec: float = 100.0):
+    def solve(self, time_limit_sec: float = 100.0, first_solution: bool = False):
         exe = _find_cpoptimizer()
         if not exe:
             raise RuntimeError("MISSING_ENGINE")
+       
 
         cplex_bin = os.path.dirname(exe).replace("cpoptimizer", "cplex")
         os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + cplex_bin + os.pathsep + os.environ.get("PATH", "")
 
-        start_time = time.time()
+        start_time = time.perf_counter()
         solution = self.model.solve(TimeLimit=time_limit_sec, LogVerbosity="Quiet", execfile=exe)
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         runtime = end_time - start_time
         is_sat = bool(solution) and solution.is_solution()

@@ -1,10 +1,10 @@
-Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Runtime(s),Is_SAT,Solution_Valid,Error
-40,Binomial,1600,103540,0.034181,0.045551,0.079731,True,True,
-40,Sequential,7762,18312,0.002656,2.622341,2.624997,True,True,
-40,Binary,2776,35604,0.005998,59.880192,59.886189,True,True,
-40,Commander,2724,26116,0.003997,6.922971,6.926969,True,True,
-40,Product,3998,18484,0.020345,90.000000,90.020345,False,,
-40,CP-SAT,0,0,0.008467,0.383279,0.391746,True,True,
-40,CPLEX-MIP,0,0,0.000000,0.000000,0.000000,,,"DOcplexLimitsExceeded: **** Promotional version. Problem size limits (1000 vars, 1000 consts) exceeded, model has 1600 vars, 234 consts, CPLEX code=1016"
-40,CPLEX-CP,0,0,0.003006,0.239771,0.242777,True,True,
-40,Gurobi-mip,0,0,0.044657,0.108421,0.153078,True,True,
+Board_Size,Algorithm,Variables,Clauses,Gen_Time(s),Solve_Time(s),Solve_Std(s),Solve_Min(s),Solve_Max(s),Repeats_Done,Runtime(s),Is_SAT,Solution_Valid,Error
+40,Binomial,1600,103540,0.056373,0.047778,0.000769,0.046848,0.048731,3,0.104151,True,True,
+40,Sequential,7762,18312,0.004993,3.683462,0.056848,3.640976,3.763812,3,3.688455,True,True,
+40,Commander,2724,26116,0.006246,13.822344,1.898133,11.175612,15.533615,3,13.828590,True,True,
+40,CP-SAT,0,0,0.001128,0.133587,0.020474,0.104999,0.151860,3,0.134715,True,True,
+40,CPLEX-CP,0,0,0.000854,0.034389,0.001619,0.033238,0.036679,3,0.035243,True,True,
+40,Gurobi-MIP,0,0,0.016531,0.028074,0.005185,0.022094,0.034738,3,0.044605,True,True,
+40,Binary,2776,35604,0.007870,90.000000,0.000000,90.000000,90.000000,1,90.007870,False,,TIMEOUT
+40,Product,3998,18484,0.004081,90.000000,0.000000,90.000000,90.000000,1,90.004081,False,,TIMEOUT
+40,CPLEX-MIP,0,0,0.000000,0.000000,0.000000,0.000000,0.000000,0,0.000000,,,"DOcplexLimitsExceeded: **** Promotional version. Problem size limits (1000 vars, 1000 consts) exceeded, model has 1600 vars, 234 consts, CPLEX code=1016"

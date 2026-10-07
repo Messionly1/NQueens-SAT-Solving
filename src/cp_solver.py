@@ -14,14 +14,17 @@ class CPQueensSolver:
         self.model.AddAllDifferent([self.queens[i] - i for i in range(n)])
         self.model.AddAllDifferent([self.queens[i] + i for i in range(n)])
 
-    def solve(self, time_limit_sec: float = 100.0):
+    def solve(self, time_limit_sec: float = 100.0, first_solution: bool = False):
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = time_limit_sec
         solver.parameters.num_search_workers = 1
+      
+        if first_solution:
+            solver.parameters.stop_after_first_solution = True
         
-        start_time = time.time()
+        start_time = time.perf_counter()
         status = solver.Solve(self.model)
-        end_time = time.time()
+        end_time = time.perf_counter()
         
         runtime = end_time - start_time
         is_sat = (status == cp_model.OPTIMAL or status == cp_model.FEASIBLE)

@@ -37,50 +37,61 @@ Chuẩn Binomial phình to bộ nhớ cực nhanh theo hàm bậc hai, trong khi
 ![Clauses Comparison](results/chart_clauses_comparison.png)
 
 ### 2. Nghịch lý Thời gian giải (Runtime Bottleneck)
-Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới $11.87$ giây ở $N=30$ (Product) và $6.53$ giây (Binary).
+Mặc dù Product và Binary có rất ít mệnh đề, việc chèn thêm các "biến phụ" (auxiliary variables) làm nhiễu loạn nghiêm trọng hệ thống Heuristic của bộ giải SAT, khiến thời gian giải bùng nổ lên tới $14.45$ giây ở $N=30$ (Product) và $9.65$ giây (Binary).
 
-Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**. **Commander** chỉ mất **0.246s** tại $N=30$ — nhanh hơn Product khoảng $48$ lần, bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. **Binomial** (không biến phụ) có thời gian *giải* nhanh nhất nhóm SAT ($0.0129s$).
+Đáng chú ý, kết quả cho thấy mức suy thoái **không tỉ lệ thuận với số lượng biến phụ**. **Commander** chỉ mất **0.248s** tại $N=30$ — nhanh hơn Product khoảng $58$ lần, bất chấp việc sinh tới 1.606 biến phụ. Nguyên nhân là cấu trúc nhóm cục bộ của Commander giúp lan truyền đơn vị loại bỏ nhanh cả một nhóm, trong khi ma trận 2D của Product tạo chuỗi kéo theo dài và phân tán. **Binomial** (không biến phụ) có thời gian *giải* nhanh nhất nhóm SAT ($0.0126s$).
 
-Cuối cùng, các bộ giải phi-SAT khẳng định sự vượt trội: **Gurobi-MIP là bộ giải nhanh nhất toàn bộ thực nghiệm** ($0.0007s$ thời gian giải tại $N=30$), tiếp theo là **CPLEX-MIP** ($0.0062s$), **CPLEX-CP** ($0.0223s$) và **CP-SAT** ($0.0414s$).
+Cuối cùng, các bộ giải phi-SAT khẳng định sự vượt trội: **Gurobi-MIP là bộ giải nhanh nhất toàn bộ thực nghiệm** ($0.00063s$ thời gian giải tại $N=30$), tiếp theo là **CPLEX-MIP** ($0.0113s$), **CPLEX-CP** ($0.0494s$) và **CP-SAT** ($0.0776s$).
 
 Xem bảng chi tiết tại mốc $N=30$ (đơn vị giây):
 
 | Encoding / Solver | Mệnh đề | Biến | Gen (s) | Solve (s) | Tổng (s) |
 |---|---|---|---|---|---|
-| Binomial | 43.255 | 900 | 0.04101 | 0.01291 | 0.05393 |
-| Sequential | 10.137 | 4.322 | 0.00266 | 0.20078 | 0.20345 |
-| Binary | 17.301 | 1.666 | 0.01764 | 6.53436 | 6.55199 |
-| Commander | 13.373 | 1.606 | 0.00368 | 0.24197 | 0.24564 |
-| Product | 10.215 | 2.426 | 0.00290 | 11.86967 | 11.87258 |
-| CP-SAT | — | — | 0.00050 | 0.04139 | 0.04189 |
-| CPLEX-CP | — | — | 0.00067 | 0.02230 | 0.02296 |
-| CPLEX-MIP | — | — | 0.01402 | 0.00617 | 0.02019 |
-| Gurobi-MIP | — | — | 0.00350 | 0.00067 | 0.00417 |
+| Binomial | 43.255 | 900 | 0.01611 | 0.01256 | 0.02867 |
+| Sequential | 10.137 | 4.322 | 0.00131 | 0.20753 | 0.20884 |
+| Binary | 17.301 | 1.666 | 0.00927 | 9.65024 | 9.65951 |
+| Commander | 13.373 | 1.606 | 0.00543 | 0.24849 | 0.25392 |
+| Product | 10.215 | 2.426 | 0.00242 | 14.44840 | 14.45082 |
+| CP-SAT | — | — | 0.00100 | 0.07755 | 0.07855 |
+| CPLEX-CP | — | — | 0.00120 | 0.04942 | 0.05062 |
+| CPLEX-MIP | — | — | 0.01653 | 0.01133 | 0.02786 |
+| Gurobi-MIP | — | — | 0.00750 | 0.00063 | 0.00813 |
 
 Lưu ý: cột **Gen** là thời gian sinh mệnh đề bằng Python, còn **Solve** mới là thời gian bộ giải thực sự tìm nghiệm. Với Binomial và CPLEX-MIP, phần lớn thời gian nằm ở bước sinh mô hình chứ không phải ở bộ giải.
 
 ### 3. Kiểm chứng khả năng mở rộng (N=40)
-Khi tăng lên $N=40$ (giới hạn $90s$ mỗi bộ giải), một **sự đảo chiều** đáng chú ý xuất hiện: **Binomial trở thành encoding SAT nhanh nhất** ($0.046s$ thời gian giải) nhờ không sinh biến phụ, trong khi **Product vượt ngưỡng khả thi** (hết $90s$ không ra nghiệm) và **Binary** suy thoái nghiêm trọng ($59.9s$). Điều này khẳng định luận điểm trung tâm: chi phí mệnh đề lớn dần trở nên không đáng kể so với lợi ích từ việc giữ cây tìm kiếm sạch.
+Khi tăng lên $N=40$ (giới hạn $90s$ mỗi bộ giải), một **sự đảo chiều** đáng chú ý xuất hiện: **Binomial trở thành encoding SAT nhanh nhất** ($0.048s$ thời gian giải, trung bình 3 lần) nhờ không sinh biến phụ, trong khi **cả Product lẫn Binary đều vượt ngưỡng khả thi** (hết $90s$ không ra nghiệm). Điều này khẳng định luận điểm trung tâm: chi phí mệnh đề lớn dần trở nên không đáng kể so với lợi ích từ việc giữ cây tìm kiếm sạch.
 
 | Encoding / Solver | Mệnh đề | Biến | Gen (s) | Solve (s) |
 |---|---|---|---|---|
-| Binomial | 103.540 | 1.600 | 0.03418 | 0.04555 |
-| Sequential | 18.312 | 7.762 | 0.00266 | 2.62234 |
-| Binary | 35.604 | 2.776 | 0.00600 | 59.88019 |
-| Commander | 26.116 | 2.724 | 0.00400 | 6.92297 |
-| Product | 18.484 | 3.998 | 0.02035 | — (hết giờ) |
-| CP-SAT | — | — | 0.00847 | 0.38328 |
-| CPLEX-CP | — | — | 0.00301 | 0.23977 |
-| Gurobi-MIP | — | — | 0.04466 | 0.10842 |
+| Binomial | 103.540 | 1.600 | 0.05637 | 0.04778 |
+| Sequential | 18.312 | 7.762 | 0.00499 | 3.68346 |
+| Binary | 35.604 | 2.776 | 0.00787 | — (hết giờ) |
+| Commander | 26.116 | 2.724 | 0.00625 | 13.82234 |
+| Product | 18.484 | 3.998 | 0.00408 | — (hết giờ) |
+| CP-SAT | — | — | 0.00113 | 0.13359 |
+| CPLEX-CP | — | — | 0.00085 | 0.03439 |
+| Gurobi-MIP | — | — | 0.01653 | 0.02807 |
 
 > **Ghi chú kỹ thuật:** Cả CPLEX-MIP (bản Community) và Gurobi (bản license giới hạn) đều chạm giới hạn kích thước mô hình ở các mốc lớn. CPLEX-MIP báo `DOcplexLimitsExceeded` tại $N=40$ (1600 biến > 1000 biến), còn Gurobi báo `Model too large for size-limited license` tại $N=50$ (2500 biến).
 
 Dữ liệu thô của mốc lớn được lưu tại `results/benchmark_large_N.csv`.
 
 ### 4. Giới hạn khả thi tại N=50
-Ở mốc $N=50$, bức tranh trở nên rõ rệt hơn bao giờ hết: **Binomial vẫn giải được** ($0.195s$ giải cho $203.425$ mệnh đề), trong khi cả **Binary lẫn Product đều vượt ngưỡng khả thi** ($90s$ không ra nghiệm). **CPLEX-CP** ($0.029s$) và **CP-SAT** ($0.145s$) tiếp tục thống trị. Đây là bằng chứng định lượng mạnh mẽ cho luận điểm trung tâm của đồ án: nén mệnh đề bằng biến phụ có thể phản tác dụng ở quy mô lớn.
+Ở mốc $N=50$, bức tranh trở nên rõ rệt hơn bao giờ hết: **Binomial vẫn giải được** ($0.203s$ giải cho $203.425$ mệnh đề), trong khi cả **Binary lẫn Product đều vượt ngưỡng khả thi** ($90s$ không ra nghiệm). **CPLEX-CP** ($0.029s$) và **CP-SAT** ($0.286s$) tiếp tục thống trị. Đây là bằng chứng định lượng mạnh mẽ cho luận điểm trung tâm của đồ án: nén mệnh đề bằng biến phụ có thể phản tác dụng ở quy mô lớn.
 
 > **Ghi chú:** Gurobi bản license giới hạn không chạy được ở $N=50$ (mô hình $2500$ biến vượt hạn mức). Dữ liệu N=50 lưu tại `results/benchmark_large_N_50.csv`.
+
+### 5. Điểm gãy tại N=100 và N=200 (rất lớn)
+Ở các mốc rất lớn, **điểm gãy thực sự** của SAT encoding bộc lộ. Tại $N=100$, **Binomial sinh tới 1.646.850 mệnh đề nhưng vẫn giải xong trong 0.183s**, trong khi **mọi encoding dùng biến phụ** (Sequential, Commander, Binary, Product) đều **vượt ngưỡng khả thi 60s** dù số mệnh đề chỉ bằng 1/14–1/7 của Binomial. Tại $N=200$, chính Binomial cũng gãy: mất **6.4s chỉ để sinh 13.253.700 mệnh đề** và không giải nổi trong 60s. Ngược lại, **CP-SAT** giải $N=100$ trong 2.9s và $N=200$ trong 11.9s.
+
+Dữ liệu tại `results/benchmark_extra_large_N.csv`. Điều này khẳng định dứt khoát: **kích thước CNF không quyết định tốc độ — biến phụ mới là yếu tố hủy hoại hiệu năng**.
+
+### 6. Đối chuẩn chế độ First-Solution (SAT vs MIP)
+Do SAT chỉ giải bài toán thỏa mãn (dừng ở nghiệm đầu tiên), trong khi MIP/CP về nguyên tắc giải tối ưu, benchmark hỗ trợ cờ `--first-solution` (Gurobi `SolutionLimit=1`, CPLEX `mip.limits.solutions=1`, CP-SAT `stop_after_first_solution=True`) để kiểm chứng liệu tiêu chí dừng có ảnh hưởng đến thời gian hay không.
+
+**Kết quả phản trực giác:** tỉ số $\Delta$ giữa hai chế độ xấp xỉ **1.0 trên mọi mốc** ($N=20,30,40$) — first-solution **không** rút ngắn thời gian. Nguyên nhân: mô hình N-Queens **không có hàm mục tiêu**, nên các bộ giải MIP vốn đã dừng ngay tại nghiệm khả thi đầu tiên (kiểm chứng độc lập: Gurobi trả `SolCount=1`, `ObjBound=-inf`). Điều này chứng minh khoảng cách SAT vs MIP/CP **không** đến từ tiêu chí dừng, mà từ cách mô hình hóa. Dữ liệu tại `results/benchmark_first_solution.csv` (mỗi solver có 2 dòng: chế độ tối ưu và `(first-sol)`).
+
 ![Runtime Comparison](results/chart_runtime_comparison.png)
 
 ## 📁 Cấu trúc Dự án
@@ -98,9 +109,14 @@ NQueens_SAT_Project/
 │   ├── visualize.py        # In bàn cờ N-Queens trực quan ra terminal
 │   └── benchmark.py        # Kịch bản chạy đo lường và vẽ biểu đồ tự động
 ├── results/            # Chứa file CSV và các biểu đồ PNG
-│   ├── sat_vs_cp_benchmark.csv      # Dữ liệu thực nghiệm đầy đủ (đã làm sạch)
-│   ├── chart_runtime_comparison.png # Biểu đồ thời gian (thang log)
-│   └── chart_clauses_comparison.png # Biểu đồ số lượng mệnh đề
+│   ├── sat_vs_cp_benchmark.csv       # Dữ liệu thực nghiệm chính N=8..30
+│   ├── benchmark_large_N.csv         # Mốc mở rộng N=40
+│   ├── benchmark_large_N_50.csv      # Mốc mở rộng N=50
+│   ├── benchmark_extra_large_N.csv   # Mốc rất lớn N=100, 200
+│   ├── benchmark_first_solution.csv  # Đối chuẩn công bằng first-solution
+│   ├── cross_solver_benchmark.csv    # Đối chuẩn chéo 5 bộ giải SAT
+│   ├── chart_runtime_comparison.png  # Biểu đồ thời gian giải (log, error bar = std)
+│   └── chart_clauses_comparison.png  # Biểu đồ số lượng mệnh đề
 ├── tests/
 │   ├── test_encoder.py    # Kiểm thử tự động các thuật toán mã hóa (handwritten & PySAT)
 │   └── test_solvers.py    # Kiểm thử tự động các bộ giải (SAT & CP-SAT)
@@ -138,6 +154,9 @@ Kịch bản hỗ trợ các tham số dòng lệnh để chạy chọn lọc (h
 | `--solver` | `glucose3` | Bộ giải PySAT sử dụng |
 | `--out` | `sat_vs_cp_benchmark.csv` | Tên file CSV đầu ra |
 | `--no-append` | tắt | Ghi đè CSV thay vì ghép thêm dữ liệu cũ |
+| `--first-solution` | tắt | Với CP/MIP: dừng ngay tại nghiệm khả thi đầu tiên (so sánh công bằng với SAT) |
+
+CSV đầu ra ghi kèm thống kê độ nhiễu: `Solve_Std(s)`, `Solve_Min(s)`, `Solve_Max(s)`, `Repeats_Done`. Mọi phép đo dùng `time.perf_counter()` (độ phân giải micro giây).
 
 Ví dụ, chỉ chạy lại mốc $N=30$ với 5 lần lặp:
 ```bash
