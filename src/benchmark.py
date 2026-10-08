@@ -269,13 +269,14 @@ def plot_charts(results):
         yerr = subset['Solve_Std(s)'].clip(lower=1e-6)
         plt.errorbar(subset['N'], subset['Solve_Time(s)'], yerr=yerr,
                      marker='o', label=alg, linewidth=2, capsize=3)
-    # Đánh dấu các điểm timeout bằng dấu ✕ (không nối đường).
+    # Đánh dấu các điểm timeout bằng dấu ✕ đỏ, đặt TẠI ĐÚNG giá trị timeout
+    # của từng mốc (N=40/50 dùng 90s; N=100/200 dùng 40s) để phản ánh trung thực
+    # chi phí thực tế trước khi solver bị ngắt. Nhãn chữ chi tiết đã có trong các
+    # bảng kết quả của báo cáo, nên ở đây chỉ cần một ký hiệu chung.
     if not df_timeout.empty:
-        for alg in sorted(df_timeout['Algorithm'].unique()):
-            sub = df_timeout[df_timeout['Algorithm'] == alg].sort_values('N')
-            plt.scatter(sub['N'], sub['Solve_Time(s)'], marker='x', s=90,
-                        zorder=5, color='red', linewidths=1.5)
-        plt.scatter([], [], marker='x', s=90, color='red', label='timeout (no solution)')
+        plt.scatter(df_timeout['N'], df_timeout['Solve_Time(s)'], marker='x', s=110,
+                    zorder=5, color='red', linewidths=1.8,
+                    label='timeout (no solution)')
     plt.yscale('log')
     plt.title('Solve Time Comparison (SAT vs CP vs MIP) — log scale, error bars = std')
     plt.xlabel('Board Size (N)')
@@ -285,18 +286,35 @@ def plot_charts(results):
     plt.savefig(os.path.join(RESULTS_DIR, 'chart_runtime_comparison.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
-    non_sat = ['CP-SAT', 'CPLEX-MIP', 'CPLEX-CP', 'Gurobi-MIP', 'gurobi-mip']
-    df_sat = df_clean[~df_clean['Algorithm'].str.upper().isin([x.upper() for x in non_sat])]
+    sat_encs = ['Binomial', 'Binary', 'Commander', 'Product', 'Sequential']
+    df_sat = df_all[df_all['Algorithm'].isin(sat_encs) & (pd.to_numeric(df_all['Clauses'], errors='coerce') > 0)].copy()
+    df_sat['Clauses'] = pd.to_numeric(df_sat['Clauses'], errors='coerce')
+    # Giới hạn N <= 100 để cả 5 encoding đều có đầy đủ mốc đối chuẩn đồng bộ
+    df_sat = df_sat[df_sat['N'] <= 100].drop_duplicates(subset=['N', 'Algorithm'], keep='first')
     if not df_sat.empty:
+        # Dùng biểu đồ đơn thang log (tương tự biểu đồ thời gian giải ở trên)
+        # để phân biệt rõ cả 5 encoding từ N=8 đến N=100 mà không bị bẹp xuống đáy.
+        style_map = {
+            'Binomial':   {'color': '#ff7f0e', 'marker': 'o', 'linestyle': '-',  'lw': 2.2, 'ms': 6},
+            'Binary':     {'color': '#1f77b4', 'marker': 's', 'linestyle': '-',  'lw': 2.0, 'ms': 6},
+            'Commander':  {'color': '#2ca02c', 'marker': 'D', 'linestyle': '-',  'lw': 2.0, 'ms': 5},
+            'Product':    {'color': '#d62728', 'marker': '^', 'linestyle': '--', 'lw': 2.0, 'ms': 7},
+            'Sequential': {'color': '#9467bd', 'marker': 'v', 'linestyle': ':',  'lw': 2.2, 'ms': 6},
+        }
         plt.figure(figsize=(10, 6))
-        for alg in sorted(df_sat['Algorithm'].unique()):
+        for alg in ['Binomial', 'Binary', 'Commander', 'Product', 'Sequential']:
+            if alg not in df_sat['Algorithm'].values:
+                continue
             subset = df_sat[df_sat['Algorithm'] == alg].sort_values('N')
-            plt.plot(subset['N'], subset['Clauses'], marker='s', label=alg, linewidth=2)
-        plt.title('Clauses Generation Comparison (SAT Encodings)')
+            st = style_map.get(alg, {'color': None, 'marker': 's', 'linestyle': '-', 'lw': 2.0, 'ms': 6})
+            plt.plot(subset['N'], subset['Clauses'], label=alg, color=st['color'],
+                     marker=st['marker'], linestyle=st['linestyle'], linewidth=st['lw'], markersize=st['ms'])
+        plt.yscale('log')
+        plt.title('Clauses Generation Comparison (SAT Encodings) — log scale')
         plt.xlabel('Board Size (N)')
-        plt.ylabel('Number of Clauses')
+        plt.ylabel('Number of Clauses (log scale)')
         plt.legend()
-        plt.grid(True, alpha=0.3)
+        plt.grid(True, which='both', alpha=0.3)
         plt.savefig(os.path.join(RESULTS_DIR, 'chart_clauses_comparison.png'), dpi=150, bbox_inches='tight')
         plt.close()
 

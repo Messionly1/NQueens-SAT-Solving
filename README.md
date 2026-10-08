@@ -60,7 +60,9 @@ Xem bảng chi tiết tại mốc $N=30$ (đơn vị giây):
 Lưu ý: cột **Gen** là thời gian sinh mệnh đề bằng Python, còn **Solve** mới là thời gian bộ giải thực sự tìm nghiệm. Với Binomial và CPLEX-MIP, phần lớn thời gian nằm ở bước sinh mô hình chứ không phải ở bộ giải.
 
 ### 3. Kiểm chứng khả năng mở rộng (N=40)
-Khi tăng lên $N=40$ (giới hạn $90s$ mỗi bộ giải), một **sự đảo chiều** đáng chú ý xuất hiện: **Binomial trở thành encoding SAT nhanh nhất** ($0.048s$ thời gian giải, trung bình 3 lần) nhờ không sinh biến phụ, trong khi **cả Product lẫn Binary đều vượt ngưỡng khả thi** (hết $90s$ không ra nghiệm). Điều này khẳng định luận điểm trung tâm: chi phí mệnh đề lớn dần trở nên không đáng kể so với lợi ích từ việc giữ cây tìm kiếm sạch.
+Khi tăng lên $N=40$ (giới hạn $90s$ mỗi bộ giải), một **sự đảo chiều** đáng chú ý xuất hiện: **Binomial trở thành encoding SAT nhanh nhất** ($0.048s$ thời gian giải) nhờ không sinh biến phụ, trong khi **cả Product lẫn Binary đều vượt ngưỡng khả thi** (hết $90s$ không ra nghiệm). Điều này khẳng định luận điểm trung tâm: chi phí mệnh đề lớn dần trở nên không đáng kể so với lợi ích từ việc giữ cây tìm kiếm sạch.
+
+> **Ghi chú về số lần lặp:** tại các mốc mở rộng ($N=40, 50, 100, 200$), các phương pháp hội tụ được chạy **trung bình 3 lần** để lượng hóa độ nhiễu, còn các phương pháp bị timeout chỉ chạy **1 lần** (không cần lặp vì đã chạm giới hạn thời gian). Cột `Repeats_Done` trong file CSV ghi rõ số lần chạy thực tế của từng dòng.
 
 | Encoding / Solver | Mệnh đề | Biến | Gen (s) | Solve (s) |
 |---|---|---|---|---|
@@ -83,7 +85,7 @@ Dữ liệu thô của mốc lớn được lưu tại `results/benchmark_large_
 > **Ghi chú:** Gurobi bản license giới hạn không chạy được ở $N=50$ (mô hình $2500$ biến vượt hạn mức). Dữ liệu N=50 lưu tại `results/benchmark_large_N_50.csv`.
 
 ### 5. Điểm gãy tại N=100 và N=200 (rất lớn)
-Ở các mốc rất lớn, **điểm gãy thực sự** của SAT encoding bộc lộ. Tại $N=100$, **Binomial sinh tới 1.646.850 mệnh đề nhưng vẫn giải xong trong 0.183s**, trong khi **mọi encoding dùng biến phụ** (Sequential, Commander, Binary, Product) đều **vượt ngưỡng khả thi 60s** dù số mệnh đề chỉ bằng 1/14–1/7 của Binomial. Tại $N=200$, chính Binomial cũng gãy: mất **6.4s chỉ để sinh 13.253.700 mệnh đề** và không giải nổi trong 60s. Ngược lại, **CP-SAT** giải $N=100$ trong 2.9s và $N=200$ trong 11.9s.
+Ở các mốc rất lớn, **điểm gãy thực sự** của SAT encoding bộc lộ. Tại $N=100$, **Binomial sinh tới 1.646.850 mệnh đề nhưng vẫn giải xong trong 0.183s**, trong khi **mọi encoding dùng biến phụ** (Sequential, Commander, Binary, Product) đều **vượt ngưỡng khả thi 40s** dù số mệnh đề chỉ bằng 1/14–1/7 của Binomial. Tại $N=200$, chính Binomial cũng gãy: mất **4.6s chỉ để sinh 13.253.700 mệnh đề** và không giải nổi trong 40s. Ngược lại, **CP-SAT** giải $N=100$ trong 0.64s và $N=200$ trong 5.9s.
 
 Dữ liệu tại `results/benchmark_extra_large_N.csv`. Điều này khẳng định dứt khoát: **kích thước CNF không quyết định tốc độ — biến phụ mới là yếu tố hủy hoại hiệu năng**.
 
