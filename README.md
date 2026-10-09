@@ -179,7 +179,7 @@ python src/benchmark.py --sizes 30 --repeats 1 --methods \
     --out cross_solver_benchmark.csv --no-append
 ```
 
-Kết quả thực nghiệm (N=30) cho thấy **CryptoMiniSAT5 (`cms`) dẫn đầu ở cả hai encoding** — Binomial (`0.00105s`) và Sequential (`0.0447s`) — củng cố luận điểm rằng backend solver tạo khác biệt lớn trên cùng một mô hình CNF. Dữ liệu chi tiết tại `results/cross_solver_benchmark.csv`.
+Kết quả thực nghiệm (N=30) cho thấy **CryptoMiniSAT5 (`cms`) dẫn đầu ở cả hai encoding** — Binomial (`0.00105s`) và Sequential (`0.0471s`) — củng cố luận điểm rằng backend solver tạo khác biệt lớn trên cùng một mô hình CNF. Dữ liệu chi tiết tại `results/cross_solver_benchmark.csv`.
 
 Dữ liệu sẽ được lưu tự động vào thư mục `results/`.
 

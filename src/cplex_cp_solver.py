@@ -18,9 +18,6 @@ def _find_cpoptimizer() -> str:
             return hits[0]
     return ""
 
-def _engine_available() -> bool:
-    exe = _find_cpoptimizer()
-    return bool(exe)
 class CplexCPSolver:
     def __init__(self, n: int):
         self.n = n
