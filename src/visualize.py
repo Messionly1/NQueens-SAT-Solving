@@ -4,6 +4,9 @@ from encoder import NQueensEncoder
 from solver import SATSolverWrapper
 from cp_solver import CPQueensSolver
 
+# Đảm bảo in được ký tự Unicode (tiếng Việt, ký hiệu bàn cờ) trên console Windows.
+sys.stdout.reconfigure(encoding='utf-8')
+
 def print_board(n: int, queens_positions: list):
     """
     In bàn cờ N-Queens ra Terminal.
