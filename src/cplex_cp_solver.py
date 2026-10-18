@@ -2,6 +2,7 @@ import os
 import glob
 import time
 from docplex.cp.model import CpoModel
+from verify import is_valid_placement
 
 def _find_cpoptimizer() -> str:
     roots = [
@@ -34,17 +35,19 @@ class CplexCPSolver:
         exe = _find_cpoptimizer()
         if not exe:
             raise RuntimeError("MISSING_ENGINE")
-       
 
-        cplex_bin = os.path.dirname(exe).replace("cpoptimizer", "cplex")
-        os.environ["PATH"] = os.path.dirname(exe) + os.pathsep + cplex_bin + os.pathsep + os.environ.get("PATH", "")
+        exe_dir = os.path.dirname(exe)
+        if exe_dir not in os.environ.get("PATH", "").split(os.pathsep):
+            cplex_bin = exe_dir.replace("cpoptimizer", "cplex")
+            os.environ["PATH"] = exe_dir + os.pathsep + cplex_bin + os.pathsep + os.environ.get("PATH", "")
 
         start_time = time.perf_counter()
-        solution = self.model.solve(TimeLimit=time_limit_sec, LogVerbosity="Quiet", execfile=exe)
+        solution = self.model.solve(TimeLimit=time_limit_sec, Workers=1, LogVerbosity="Quiet", execfile=exe)
         end_time = time.perf_counter()
 
         runtime = end_time - start_time
         is_sat = bool(solution) and solution.is_solution()
+        self.engine_time = solution.get_solve_time() if solution else None
 
         if is_sat:
             self.solution = [solution[self.q[i]] for i in range(self.n)]
@@ -59,12 +62,7 @@ class CplexCPSolver:
         return self.solution
 
     def verify_solution(self) -> bool:
-        q = self.solution
-        if not q or len(q) != self.n:
-            return False
-        return (len(set(q)) == self.n
-                and len({q[i] - i for i in range(self.n)}) == self.n
-                and len({q[i] + i for i in range(self.n)}) == self.n)
+        return is_valid_placement(self.solution, self.n)
 
 if __name__ == "__main__":
     solver = CplexCPSolver(8)
