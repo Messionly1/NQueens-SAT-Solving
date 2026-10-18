@@ -45,7 +45,6 @@
     urlcolor = urlname
 }
 
-% --- Nhan cho tieu de section/subsection: mau xanh dam + duong ke duoi ---
 \usepackage{titlesec}
 \titleformat{\section}
   {\normalfont\large\bfseries\color{oxfordblue}}{\thesection}{0.6em}{}
@@ -54,7 +53,6 @@
 \titlespacing*{\section}{0pt}{1.4ex plus .2ex}{0.7ex}
 \titlespacing*{\subsection}{0pt}{1.0ex plus .2ex}{0.4ex}
 
-% --- Caption: dam nhan "Table N"/"Figure N" do Elsevier tu dong them ---
 \usepackage{caption}
 \captionsetup{font=small, labelfont={bf,color=oxfordblue}, labelsep=colon}
 
@@ -95,6 +93,12 @@
 \makeatother
 \setlength{\bibsep}{0pt}
 
+\ExplSyntaxOn
+\cs_set:Npn \__first_footerline:
+  { \group_begin: \small \sffamily \__short_authors: :~ { \rmfamily \itshape Course~ report~ ---~ Modern~ Issues~ in~ Computer~ Science } \group_end: }
+\ExplSyntaxOff
+\RenewDocumentCommand \printorcid { } { }
+
 \begin{document}
 
 \shorttitle{Exact SAT Solving and Constraint Programming for the N-Queens Problem}
@@ -106,26 +110,26 @@
 \address[1]{Faculty of Information Technology, VNU University of Engineering and Technology, 144 Xuan Thuy, Cau Giay, Hanoi, 100000, Vietnam}
 
 \begin{abstract}
-The N-Queens problem is a classic combinatorial optimization benchmark requiring the placement of $N$ non-attacking queens on an $N \times N$ chessboard. This paper presents a comprehensive study of exact solving methodologies centered on Boolean Satisfiability (SAT). The primary contributions include the mathematical formulation, implementation, and empirical evaluation of five At-Most-One (AMO) encodings: Binomial (Pairwise), Sequential Counter, Binary, Commander, and Product. Furthermore, we conduct an extensive cross-paradigm benchmark against two other exact paradigms: Constraint Programming (Google OR-Tools CP-SAT, IBM CPLEX CP) and Integer Linear Programming (IBM CPLEX MIP, Gurobi). Computational experiments spanning baseline dimensions ($N=8$ to $30$), scalability extensions ($N=40, 50$), and massive stress-test instances ($N=100, 200$) reveal a severe trade-off between encoding size and solving latency. We quantitatively demonstrate that auxiliary variables—introduced to compress clause counts—can severely degrade Conflict-Driven Clause Learning (CDCL) heuristics. A cross-solver study across five modern backends (Glucose3, Glucose4, CaDiCaL, MapleSAT, and CryptoMiniSAT5) demonstrates that solver rankings reverse depending on the encoding, proving that solver--encoding synergy, rather than CNF size alone, dictates performance. Finally, a fairness evaluation under a first-feasible-solution stopping criterion confirms that the performance advantage of CP and MIP stems from high-level problem formulation and direct branching on original decision variables rather than termination discrepancies.
+The N-Queens problem is a classic constraint satisfaction benchmark requiring the placement of $N$ non-attacking queens on an $N \times N$ chessboard. We study it as a controlled testbed for SAT encodings of At-Most-One (AMO) constraints. Five AMO encodings---Binomial (Pairwise), Sequential Counter, Binary, Commander and Product---are formulated, implemented and verified: all five are shown mechanically to be correct and to enforce arc consistency through unit propagation, so they do not differ in propagation strength. They are benchmarked with Glucose3 for $N$ from $8$ to $200$ and compared with Constraint Programming (OR-Tools CP-SAT, IBM CPLEX CP Optimizer) and Integer Linear Programming (IBM CPLEX, Gurobi). The encoding with the largest CNF, Binomial, is the fastest SAT encoding on the original order up to $N=100$ and never times out on any order, so CNF size does not predict solving time. A permutation study over ten equivalent variable and clause orders per configuration shows, however, that single-order measurements greatly exaggerate the differences between encodings: at $N=30$ the slowdowns of Product, Binary and Commander shrink by factors of $1083$, $515$ and $32$, respectively. Genuine differences emerge only at larger sizes, where Sequential, Binary and Product fail on most orders at $N=100$ while Commander remains as fast as Binomial. A five-backend comparison (Glucose3/4, CaDiCaL, MapleSAT, CryptoMiniSAT5) shows that the best backend depends on the encoding. A first-feasible-solution experiment confirms that stopping criteria do not explain the MIP results: Gurobi finds a solution at the root node ($N=30$) or after a single node ($N=40$). Finally, a noise analysis and a list of threats to validity delimit which orderings the data support.
 \end{abstract}
 
 \maketitle
 
 \begin{keywords}
-N-Queens \sep SAT Solving \sep At-Most-One Encoding \sep Constraint Programming \sep Integer Linear Programming \sep Combinatorial Optimization
+N-Queens \sep SAT Solving \sep At-Most-One Encoding \sep Constraint Programming \sep Integer Linear Programming \sep Constraint Satisfaction \sep Empirical Methodology
 \end{keywords}
 
 \section{Introduction}
-Graph layout and resource allocation represent fundamental families of combinatorial optimization problems with pervasive applications in VLSI design, telecommunications architectures, and automated scheduling \cite{chung1988labelings}. Within this domain, the N-Queens problem serves as a classical and rigorous benchmark for evaluating the efficiency of combinatorial search and constraint reasoning algorithms.
+The N-Queens problem is a classical benchmark for combinatorial search and constraint reasoning \cite{bell2009survey}. The objective is to place $N$ queens on an $N \times N$ chessboard such that no two queens attack each other under standard chess rules (i.e., sharing neither row, column, nor diagonal). The number of candidate placements grows factorially with $N$, so naive depth-first backtracking quickly becomes impractical.
 
-The objective of the problem is to place $N$ queens on an $N \times N$ chessboard such that no two queens attack each other under standard chess rules (i.e., sharing neither row, column, nor diagonal). As the board size scales from small dimensions to large problem spaces, combinatorial explosion expands the state space factorially. Consequently, traditional depth-first backtracking algorithms rapidly succumb to computational exhaustion.
+It is important to state the scope of this study precisely. Finding \emph{one} solution of N-Queens is not computationally hard: explicit constructions place $N$ non-attacking queens in $O(N)$ time for every $N \geq 4$ \cite{bell2009survey}. The problem is used here not because it requires SAT, but because its constraint structure---a set of overlapping At-Most-One (AMO) constraints---is simple, fully understood, and scalable, which makes it a controlled testbed for comparing CNF encodings and solver paradigms.
 
-This study presents a complete and rigorous SAT-based methodology for solving the N-Queens problem exactly. By examining the interplay between Conflict-Driven Clause Learning (CDCL) heuristics and auxiliary boolean variables, we quantitatively analyze the performance paradox across diverse Conjunctive Normal Form (CNF) encodings. The remainder of this report is organized as follows: Section 2 reviews related work. Section 3 formalizes the mathematical problem formulation. Section 4 establishes five SAT encodings for At-Most-One (AMO) constraints along with symmetry breaking. Section 5 presents the Constraint Programming (CP) formulation. Section 6 provides comprehensive experimental benchmarks, scalability evaluations, cross-solver comparisons, fairness analyses, and runtime bottleneck discussions. Section 7 concludes the paper.
+This study presents a SAT-based methodology for solving the N-Queens problem exactly and examines how the choice of AMO encoding affects Conflict-Driven Clause Learning (CDCL) solvers. Beyond reporting runtimes, we check two methodological pitfalls that are easy to overlook: (i) whether differences in propagation strength actually exist between the encodings, which we verify mechanically, and (ii) whether runtime differences survive a change of variable and clause order, to which CDCL solvers are known to be sensitive. The remainder of this report is organized as follows: Section 2 reviews related work. Section 3 formalizes the problem. Section 4 establishes five SAT encodings for AMO constraints along with symmetry breaking. Section 5 presents the Constraint Programming (CP) formulation. Section 6 provides experimental benchmarks, an ordering-sensitivity study, scalability evaluations, cross-solver comparisons, fairness analyses, and threats to validity. Section 7 concludes the paper.
 
 \section{Related Work}
-Transforming cardinality constraints into Conjunctive Normal Form (CNF) is a foundational and actively developed area in propositional satisfiability. Warners \cite{warners1998nonlinear} proposed linear-time transformations for linear inequalities using auxiliary variables. Sinz \cite{sinz2005towards} subsequently introduced the Sequential Counter encoding, achieving linear $O(n)$ clause complexity and establishing a standard building block in modern SAT applications. Gent and Nightingale \cite{gent2004generic} analyzed the trade-off between encoding compactness and unit propagation strength. For the specific At-Most-One (AMO) constraint, Klieber and Kwon \cite{klieber2007efficient} proposed the Commander encoding, while Chen \cite{chen2010new} designed the Product encoding based on 2D coordinate decomposition.
+Transforming cardinality constraints into Conjunctive Normal Form (CNF) is a foundational and actively developed area in propositional satisfiability. Warners \cite{warners1998nonlinear} proposed linear-time transformations for linear inequalities using auxiliary variables. Sinz \cite{sinz2005towards} subsequently introduced the Sequential Counter encoding, achieving linear $O(n)$ clause complexity and establishing a standard building block in modern SAT applications. Gent \cite{gent2002arc} showed how a CNF translation can let unit propagation enforce arc consistency, and Bailleux and Boufkhad \cite{bailleux2003efficient} applied this criterion to cardinality constraints, making propagation strength a standard yardstick alongside encoding size. For the specific At-Most-One (AMO) constraint, Klieber and Kwon \cite{klieber2007efficient} proposed the Commander encoding, while Chen \cite{chen2010new} designed the Product encoding based on 2D coordinate decomposition.
 
-In terms of solver architectures, Conflict-Driven Clause Learning (CDCL) equipped with Variable State Independent Decaying Sum (VSIDS) decision heuristics \cite{marques2008conflict} constitutes the core engine of Glucose \cite{audemard2009predicting}, the primary SAT solver evaluated in this study. In parallel, Constraint Programming (CP) \cite{rossi2006handbook} preserves high-level integer constraint structures, filtering infeasible domains via maximum bipartite matching on \texttt{AllDifferent} constraints \cite{regin1994filtering}. Furthermore, Integer Linear Programming (ILP) / Mixed Integer Programming (MIP) \cite{bertsimas1997introduction} formulates combinatorial constraints as systems of linear inequalities solved via branch-and-cut; by branching directly on primary decision variables without auxiliary boolean variables, MIP avoids heuristic disorientation. Our study evaluates all three paradigms (SAT, CP, ILP) side by side on a uniform benchmark, illuminating how encoding structure and variable introduction impact solver performance.
+In terms of solver architectures, Conflict-Driven Clause Learning (CDCL) equipped with Variable State Independent Decaying Sum (VSIDS) decision heuristics \cite{marques2008conflict} constitutes the core engine of Glucose \cite{audemard2009predicting}, the primary SAT solver evaluated in this study. CDCL solvers are also known to be sensitive to seemingly irrelevant properties of the input, such as the order of variables and clauses, so single-run comparisons can be misleading \cite{marques2008conflict}. In parallel, Constraint Programming (CP) \cite{rossi2006handbook} preserves high-level integer constraint structures; the \texttt{AllDifferent} constraint admits a generalized-arc-consistent filtering algorithm based on bipartite matching \cite{regin1994filtering}, although practical solvers choose their propagation level per constraint. Integer Linear Programming (ILP) / Mixed Integer Programming (MIP) \cite{bertsimas1997introduction} formulates the constraints as linear inequalities solved via presolve, primal heuristics and branch-and-cut. Our study evaluates all three paradigms (SAT, CP, ILP) side by side on a uniform benchmark.
 
 \section{Problem Formulation}
 The N-Queens problem can be formally modeled as a Constraint Satisfaction Problem (CSP). Given an $N \times N$ chessboard, let $x_{i,j} \in \{0, 1\}$ denote binary decision variables indicating whether a queen is placed at row $i$ and column $j$, where $i, j \in \{1, \dots, N\}$. The constraint system is defined by:
@@ -135,7 +139,7 @@ The N-Queens problem can be formally modeled as a Constraint Satisfaction Proble
     \sum_{i-j=k} x_{i,j} \leq 1 \quad \forall k \in \{-(N-1), \dots, N-1\} \label{eq:diag1} \\
     \sum_{i+j=k} x_{i,j} \leq 1 \quad \forall k \in \{2, \dots, 2N\} \label{eq:diag2}
 \end{align}
-Equation \eqref{eq:row} enforces the Exactly-One constraint for every row. Equations \eqref{eq:col}, \eqref{eq:diag1}, and \eqref{eq:diag2} enforce At-Most-One (AMO) constraints across columns and both sets of diagonals. Because an Exactly-One constraint naturally decomposes into an At-Least-One (ALO) clause and an AMO constraint, the core mathematical challenge lies in optimizing the CNF representation of AMO constraints.
+Equation \eqref{eq:row} enforces the Exactly-One constraint for every row. Equations \eqref{eq:col}, \eqref{eq:diag1}, and \eqref{eq:diag2} enforce At-Most-One (AMO) constraints across columns and both sets of diagonals. Because an Exactly-One constraint naturally decomposes into an At-Least-One (ALO) clause and an AMO constraint, the core mathematical challenge lies in optimizing the CNF representation of AMO constraints. Columns need only AMO: $N$ queens in $N$ distinct columns already fill every column. (The MIP models state the column constraints as equalities, which is equivalent.) In the SAT encodings the cell $(i,j)$ is the propositional variable with index $(i-1)N + j$, and every AMO is applied only to diagonals with at least two cells.
 
 \section{SAT Encodings for At-Most-One Constraints}
 To leverage modern CDCL SAT solvers, the constraint system must be transformed into Conjunctive Normal Form (CNF). Given a set of boolean variables $X = \{x_1, \dots, x_n\}$, the AMO constraint enforces $\sum_{i=1}^n x_i \leq 1$. Below is the mathematical formulation of the five evaluated encodings.
@@ -143,12 +147,12 @@ To leverage modern CDCL SAT solvers, the constraint system must be transformed i
 \subsection{Binomial (Pairwise) Encoding}
 The most intuitive formulation enforces mutual exclusion across all pairs of variables. For every pair $i \neq j$, both variables cannot simultaneously evaluate to True:
 \begin{equation}
-    AMO_{\text{Binomial}}(X) = \bigwedge_{1 \leq i < j \leq n} (\neg x_i \vee \neg x_j)
+    \mathrm{AMO}_{\text{Binomial}}(X) = \bigwedge_{1 \leq i < j \leq n} (\neg x_i \vee \neg x_j)
 \end{equation}
 This direct encoding introduces zero auxiliary variables. However, it incurs quadratic space complexity with $\binom{n}{2} = O(n^2)$ binary clauses.
 
 \subsection{Sequential Counter Encoding}
-To reduce clause volume, Sinz \cite{sinz2005towards} introduced $n-1$ auxiliary variables $s_1, \dots, s_{n-1}$ acting as an accumulator register. Variable $s_i$ evaluates to True if at least one $x_k$ ($k \leq i$) is True:
+To reduce clause volume, Sinz \cite{sinz2005towards} introduced $n-1$ auxiliary variables $s_1, \dots, s_{n-1}$ acting as an accumulator register. The clauses force $s_i$ to be True whenever some $x_k$ with $k \leq i$ is True (the converse is not enforced), and forbid $x_i$ when $s_{i-1}$ is already True:
 \begin{align}
     (\neg x_1 \vee s_1) \label{eq:seq1} \\
     \bigwedge_{i=2}^{n-1} \left( (\neg x_i \vee s_i) \wedge (\neg s_{i-1} \vee s_i) \wedge (\neg x_i \vee \neg s_{i-1}) \right) \label{eq:seq2} \\
@@ -157,68 +161,82 @@ To reduce clause volume, Sinz \cite{sinz2005towards} introduced $n-1$ auxiliary 
 This encoding achieves a linear clause count of $3n - 4 = O(n)$, at the cost of introducing $n-1 = O(n)$ auxiliary variables.
 
 \subsection{Binary, Commander, and Product Encodings}
-\textbf{Binary Encoding:} Encodes the index of the active variable (if any) in binary using $\lceil \log_2 n \rceil$ auxiliary variables, producing $O(n \log n)$ clauses.
+\textbf{Binary Encoding:} Let $m = \lceil \log_2 n \rceil$ and introduce auxiliaries $b_1, \dots, b_m$. Writing $\beta_t(k) \in \{0,1\}$ for the $t$-th bit (most significant first) of the $m$-bit binary representation of $k-1$, each $x_k$ forces the bit pattern of its own index:
+\begin{equation}
+    \mathrm{AMO}_{\text{Binary}}(X) = \bigwedge_{k=1}^{n} \bigwedge_{t=1}^{m} \left(\neg x_k \vee b_t^{\beta_t(k)}\right), \qquad b^{1} = b,\; b^{0} = \neg b .
+\end{equation}
+Two true variables would demand two different bit patterns, which is impossible. This yields exactly $n\lceil \log_2 n \rceil$ binary clauses and $\lceil \log_2 n \rceil$ auxiliary variables.
 
-\textbf{Commander Encoding:} Partitions variable set $X$ into disjoint subsets of size $\approx \sqrt{n}$ \cite{klieber2007efficient}. Each subset is governed by a commander variable, achieving a balanced trade-off with $O(n \sqrt{n})$ clauses and $O(\sqrt{n})$ auxiliary variables.
+\textbf{Commander Encoding:} Partitions $X$ into consecutive groups $G_1, \dots, G_g$ of size $s = \lceil\sqrt{n}\rceil$ (the last group may be smaller), so $g = \lceil n/s \rceil$ \cite{klieber2007efficient}. Each group has a commander $c_h$:
+\begin{equation}
+    \mathrm{AMO}_{\text{Cmd}}(X) = \mathrm{AMO}_{\text{Binomial}}(c_1, \dots, c_g) \wedge \bigwedge_{h=1}^{g} \Big( \big(\neg c_h \vee \textstyle\bigvee_{x \in G_h} x\big) \wedge \bigwedge_{x \in G_h} (\neg x \vee c_h) \wedge \mathrm{AMO}_{\text{Binomial}}(G_h) \Big),
+\end{equation}
+so that $c_h \Leftrightarrow \bigvee_{x \in G_h} x$. Our implementation is the one-level variant (Klieber and Kwon apply the scheme recursively); it uses $g = O(\sqrt{n})$ auxiliaries and $\binom{g}{2} + \sum_h \big(1 + |G_h| + \binom{|G_h|}{2}\big) = O(n\sqrt{n})$ clauses. For $n \leq 4$ it falls back to Binomial.
 
-\textbf{Product Encoding:} Arranges the variables into a 2D matrix of dimensions $p \times q$ with $p \approx q \approx \sqrt{n}$ \cite{chen2010new}. Setting $x_k$ to True activates its corresponding row and column auxiliary variables, yielding $O(n)$ clauses with $O(\sqrt{n})$ auxiliary variables. Despite its compactness, this encoding provides weak unit-propagation strength. In our implementation only the forward implications are emitted; the converse implications that tie each row/column auxiliary back to its variables are omitted, so an auxiliary may be satisfied while no queen is placed in its row or column. Propagation therefore prunes far less than the original constraint, and infeasible partial assignments survive until additional branching occurs \cite{gent2004generic}. This weakness is quantified in Table \ref{tab:theory}.
+\textbf{Product Encoding:} Arranges the variables into a 2D matrix of dimensions $p \times q$ with $p = \lceil\sqrt{n}\rceil$, $q = \lceil n/p \rceil$ \cite{chen2010new}; variable $x_k$ occupies row $r(k) = \lfloor (k-1)/q \rfloor + 1$ and column $c(k) = ((k-1) \bmod q) + 1$. With row auxiliaries $R_1, \dots, R_p$ and column auxiliaries $C_1, \dots, C_q$:
+\begin{equation}
+    \mathrm{AMO}_{\text{Product}}(X) = \mathrm{AMO}_{\text{Binomial}}(R) \wedge \mathrm{AMO}_{\text{Binomial}}(C) \wedge \bigwedge_{k=1}^{n} \left(\neg x_k \vee R_{r(k)}\right) \wedge \left(\neg x_k \vee C_{c(k)}\right).
+\end{equation}
+These forward implications are exactly the clauses of Chen's encoding; we encode the two inner AMO constraints pairwise instead of recursively, which yields $2n + \binom{p}{2} + \binom{q}{2} \approx 3n$ clauses and $p + q = O(\sqrt{n})$ auxiliary variables. Because only forward implications are used, an auxiliary may be True while no variable in its row or column is True. This does \emph{not} weaken propagation on the original variables: if $x_k$ is True, unit propagation sets $R_{r(k)}$ and $C_{c(k)}$, falsifies every other row and column auxiliary, and thereby falsifies every other $x_j$ (two variables sharing a row differ in their column). For $n \leq 4$ the encoding falls back to Binomial.
 
 \begin{notebox}{Technical Note: PySAT Cardinality Encoding Semantics}
-\textbf{Note on PySAT encoding labels.} In addition to the five handwritten implementations in \texttt{encoder.py}, our codebase includes \texttt{pysat\_encoder.py}, which interfaces directly with PySAT's cardinality algorithms (\texttt{pysat.card.CardEnc}). It should be noted that certain PySAT encoding identifiers do not map one-to-one to the algorithms named above: specifically, \texttt{CardEnc} types \texttt{cardnetwrk} (Cardinality Networks) and \texttt{mtotalizer} (Modulo Totalizer) are generalized sorting/counter networks with topological structures distinct from our handwritten Commander and Product encodings. Therefore, the PySAT module serves primarily as an independent verification baseline for logical correctness. All quantitative comparisons and structural evaluations in this report originate strictly from the five native implementations in \texttt{encoder.py}.
+\textbf{Note on PySAT encoding labels.} In addition to the five handwritten implementations in \texttt{encoder.py}, our codebase includes \texttt{pysat\_encoder.py}, which interfaces directly with PySAT's cardinality algorithms (\texttt{pysat.card.CardEnc}). It should be noted that certain PySAT encoding identifiers do not map one-to-one to the algorithms named above: specifically, \texttt{CardEnc} types \texttt{cardnetwrk} (Cardinality Networks) and \texttt{mtotalizer} (Modulo Totalizer) are generalized sorting/counter networks with topological structures distinct from our handwritten Commander and Product encodings. Therefore, the PySAT module serves primarily as an independent verification baseline for logical correctness: the unit tests enumerate every solution for small $N$ under each handwritten and each PySAT encoding and check that the solution sets coincide with a brute-force enumeration. All quantitative comparisons and structural evaluations in this report originate strictly from the five native implementations in \texttt{encoder.py}.
 \end{notebox}
 
 \subsection{Symmetry Breaking}
-Solutions to the N-Queens problem are invariant under horizontal reflection: if a board configuration is valid, its reflection across the vertical axis is also valid. We eliminate half of the search space without loss of completeness by fixing the queen in the first row to the left half of the board:
+The solution set of N-Queens is closed under reflection across the vertical axis of the board: if a placement is valid, its mirror image is also valid. We eliminate roughly half of the search space without loss of satisfiability by restricting the queen of the first row to the left half of the board (indices are 1-based as in Section 3), which adds $\lfloor N/2 \rfloor$ unit clauses:
 \begin{equation}
-    \neg x_{0,c} \quad \forall c \in \left\{\left\lceil N/2 \right\rceil, \dots, N-1\right\}
+    \neg x_{1,j} \quad \forall j \in \left\{\left\lceil N/2 \right\rceil + 1, \dots, N\right\}
 \end{equation}
-These unit clauses are injected identically across all five SAT encodings, ensuring that all solvers navigate the exact same pruned search space and guaranteeing rigorous benchmarking fairness.
+For odd $N$ the middle column remains allowed, which keeps the constraint sound. These unit clauses are injected identically across all five SAT encodings, so all SAT configurations search the same reduced space. The CP and MIP models (Section 5 and the MIP counterpart of Eqs.~\eqref{eq:row}--\eqref{eq:diag2}) do \emph{not} include this constraint; since it only removes solutions that are mirror images of others, its effect on time-to-first-solution is small, but the asymmetry is listed among the threats to validity (Section \ref{sec:threats}).
 
 \section{Constraint Programming (CP) Formulation}
-Unlike SAT solving, which decomposes problems into propositional clauses, Constraint Programming (CP) preserves high-level integer domain abstractions. Defining an array of integer variables $Q = [Q_0, \dots, Q_{N-1}]$, where $Q_i \in \{0, \dots, N-1\}$ denotes the column coordinate of the queen placed on row $i$, the entire problem is captured using three global constraints:
+Unlike SAT solving, which decomposes problems into propositional clauses, Constraint Programming (CP) preserves high-level integer domain abstractions. Defining an array of integer variables $Q = [Q_0, \dots, Q_{N-1}]$, where $Q_i \in \{0, \dots, N-1\}$ denotes the column of the queen placed on row $i$ (0-based, matching the implementation; one queen per row is implicit in the model), the entire problem is captured using three global constraints:
 \begin{itemize}
     \setlength{\itemsep}{1pt}
     \setlength{\parskip}{0pt}
-    \item \texttt{AddAllDifferent($Q$)}
-    \item \texttt{AddAllDifferent($Q_i - i \;\forall i$)}
-    \item \texttt{AddAllDifferent($Q_i + i \;\forall i$)}
+    \item $\mathrm{AllDifferent}(Q_0, \dots, Q_{N-1})$ \hfill (columns)
+    \item $\mathrm{AllDifferent}(Q_0 - 0, \dots, Q_{N-1} - (N-1))$ \hfill (diagonals $i - j$ constant)
+    \item $\mathrm{AllDifferent}(Q_0 + 0, \dots, Q_{N-1} + (N-1))$ \hfill (anti-diagonals $i + j$ constant)
 \end{itemize}
-Internally, CP engines propagate \texttt{AddAllDifferent} constraints using maximum bipartite matching filtering algorithms \cite{regin1994filtering}. This achieves generalized arc consistency (GAC), pruning infeasible subtrees without materializing millions of propositional clauses.
+The same model is passed to CP-SAT (\texttt{AddAllDifferent}) and to CPLEX CP Optimizer (\texttt{all\_diff}). It has $N$ integer variables and three global constraints instead of hundreds of thousands of clauses. \texttt{AllDifferent} admits generalized arc consistency (GAC) via bipartite matching \cite{regin1994filtering}, but the propagation level actually applied is a solver choice; we used the default settings of each solver apart from single-threading and did not force GAC. The two CP solvers also differ in architecture: CPLEX CP Optimizer is a classical CP engine, whereas CP-SAT is a lazy-clause-generation solver whose core is itself a CDCL SAT engine that creates Boolean literals for the integer domains on demand. CP-SAT therefore does use auxiliary Booleans internally; what distinguishes it from our SAT pipeline is that the encoding is produced lazily and combined with native propagators, presolve and its own search heuristics.
 
-\section{Computational Experiments and Bottleneck Analysis}
+\section{Computational Experiments}
 \subsection{Theoretical Summary of the Five Encodings}
-Before turning to the empirical results, Table \ref{tab:theory} consolidates the structural profile of each encoding: its auxiliary-variable count, clause complexity, and the strength of \emph{unit-propagation} inference. The relevant notion is arc consistency enforced through unit propagation (ACUP): a translation enforces arc consistency if every value that is logically removed by the constraint is also removed by unit propagation alone, without search \cite{gent2004generic}. For a cardinality translation, ACUP means that the CNF prunes exactly as aggressively as the original constraint.
+Before turning to the empirical results, Table \ref{tab:theory} consolidates the structural profile of each encoding: its auxiliary-variable count, clause complexity, and the strength of \emph{unit-propagation} inference. The relevant notion is arc consistency enforced through unit propagation (ACUP): a translation enforces arc consistency if every value that is logically removed by the constraint is also removed by unit propagation alone, without search \cite{gent2002arc,bailleux2003efficient}. For a cardinality translation, ACUP means that the CNF prunes exactly as aggressively as the original constraint.
 
 \begin{table}[htbp]
     \centering
     \renewcommand{\arraystretch}{1.15}
-    \caption{Theoretical comparison of the five AMO encodings. ``Propagation strength'' describes how aggressively unit propagation prunes: ACUP denotes full arc consistency through unit propagation; strong denotes correct local pruning with partial ACUP; weak denotes weak pruning caused by under-constrained auxiliary variables.}
+    \caption{Theoretical comparison of the five AMO encodings (as implemented). ``ACUP'' was verified mechanically for every AMO size $m = 2..16$: asserting any $x_k$ lets unit propagation alone derive $\neg x_j$ for all $j \neq k$. ``Aux.\ defined'' states whether the auxiliaries are functionally determined by the $x$ variables, i.e.\ cannot be True when all $x$ are False.}
     \label{tab:theory}
-    \begin{tabular}{l c c l}
+    \begin{tabular}{l c c c c}
         \toprule
         \rowcolor{rowtint}
-        \textbf{Encoding} & \textbf{Aux. Variables} & \textbf{Clause Complexity} & \textbf{Propagation Strength} \\
+        \textbf{Encoding} & \textbf{Aux. Variables} & \textbf{Clause Complexity} & \textbf{ACUP} & \textbf{Aux.\ defined} \\
         \midrule
-        Binomial (Pairwise) & $0$                 & $O(n^2)$          & ACUP \\
-        Sequential Counter  & $O(n)$              & $O(n)$            & ACUP \\
-        Commander           & $O(\sqrt{n})$         & $O(n\sqrt{n})$      & ACUP \\
-        Binary              & $O(\log n)$         & $O(n \log n)$     & strong \\
-        Product             & $O(\sqrt{n})$         & $O(n)$            & weak \\
+        Binomial (Pairwise) & $0$                 & $O(n^2)$          & yes & -- \\
+        Sequential Counter  & $n-1$               & $3n-4$            & yes & no \\
+        Commander (1-level) & $O(\sqrt{n})$       & $O(n\sqrt{n})$    & yes & yes \\
+        Binary              & $\lceil\log_2 n\rceil$ & $n\lceil\log_2 n\rceil$ & yes & no \\
+        Product (1-level)   & $O(\sqrt{n})$       & $\approx 3n$      & yes & no \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-The comparison in Table \ref{tab:theory} frames the central puzzle of this study. The two encodings with the smallest auxiliary-variable footprint and the most compact clause counts—Binary and Product—are precisely the two whose auxiliary variables are least tightly constrained by the original variables. In our implementation the Product translation emits only the forward implications $x_k \Rightarrow R_{r(k)}$ and $x_k \Rightarrow C_{c(k)}$ but not the converse implications $R_r \Rightarrow \bigvee_{k \in r} x_k$ and $C_c \Rightarrow \bigvee_{k \in c} x_k$ found in the original formulation \cite{chen2010new}. A row or column auxiliary may therefore be satisfied without any queen being placed, which both weakens propagation and floods the decision space with auxiliary variables that carry no constraint. This structural deficit foreshadows the empirical behaviour documented in Section \ref{sec:bottleneck}.
+Table \ref{tab:theory} rules out one tempting explanation for runtime differences. All five encodings are correct AMO translations and all five achieve ACUP: with respect to the queen variables, unit propagation prunes exactly as much under Product or Binary as under Binomial. Both properties are checked by \texttt{src/verify\_propagation.py} and by the unit tests, which additionally enumerate all solutions for $N \leq 7$ under every encoding and compare them with brute force. The encodings differ only in size and in how tightly the auxiliaries are tied to the original variables: in Sequential, Binary and Product an auxiliary can be True with no queen placed, while in Commander it cannot. Neither property changes which assignments are pruned by propagation, so any runtime differences must come from search dynamics (decision heuristics, clause learning), which we examine empirically in Section \ref{sec:ordering}.
 
 \subsection{Experimental Setup}
-Experiments were conducted across baseline dimensions $N \in \{8, 10, 15, 20, 25, 30\}$, and subsequently extended to two large scales ($N=40, 50$) and two massive stress-test scales ($N=100, 200$) to evaluate scalability frontiers and pinpoint breakdown points. Three distinct families of exact solvers were evaluated: (i) SAT solving with 5 encodings utilizing the Glucose3 CDCL backend; (ii) Constraint Programming with CP-SAT (Google OR-Tools) and CPLEX CP Optimizer (IBM); and (iii) Integer Linear Programming with CPLEX MIP (IBM) and Gurobi. For instances $N \leq 30$, each configuration was executed across 3 repetitions and averaged; for extended benchmarks, single runs were used for timeouts while converging runs averaged 3 repetitions. To quantify measurement noise, standard deviations as well as minimum and maximum solve times are reported. High-precision monotonic timing via \texttt{time.perf\_counter()} was employed to eliminate discretization artifacts. All solvers were restricted to single-threaded execution to ensure fairness. Solutions across all paradigms—not merely SAT—were independently validated by a shared verification oracle. Model generation time (Python) and solving time (solver core) were measured independently. A cross-solver evaluation across five backends (Glucose3, Glucose4, CaDiCaL, MapleSAT, CryptoMiniSAT5) and a first-feasible-solution fairness benchmark for CP/MIP (Section \ref{sec:fairness}) were also conducted. Because three repetitions provide only a coarse estimate of dispersion, Section \ref{sec:noise} additionally reports coefficient-of-variation diagnostics and a dedicated 10-repetition re-measurement, and distinguishes statistically supported orderings from those dominated by measurement noise.
+Experiments were conducted across baseline dimensions $N \in \{8, 10, 15, 20, 25, 30\}$, and subsequently extended to two large scales ($N=40, 50$) and two massive stress-test scales ($N=100, 200$) to evaluate scalability frontiers and pinpoint breakdown points. Three distinct families of exact solvers were evaluated: (i) SAT solving with 5 encodings utilizing the Glucose3 CDCL backend; (ii) Constraint Programming with CP-SAT (Google OR-Tools) and CPLEX CP Optimizer (IBM); and (iii) Integer Linear Programming with CPLEX MIP (IBM) and Gurobi. For instances $N \leq 30$, each configuration was executed across 3 repetitions and averaged; for extended benchmarks, timed-out configurations were run once and converging ones three times (except Sequential at $N=50$, run once). Standard deviation, minimum and maximum of the solve time are recorded in the CSV files alongside the mean. Timing uses the monotonic high-resolution clock \texttt{time.perf\_counter()}. All solvers were restricted to a single thread (\texttt{num\_search\_workers=1} for CP-SAT, \texttt{threads=1} for CPLEX MIP, \texttt{Threads=1} for Gurobi, \texttt{Workers=1} for CPLEX CP; the PySAT backends are sequential). Solutions across all paradigms—not merely SAT—were independently validated by a shared verification oracle. Model generation time (Python) and solving time were measured separately. For SAT, \emph{Solve} is the time of the \texttt{solve()} call only, excluding loading the clauses into the solver; for CP-SAT, CPLEX MIP and Gurobi it is the wall-clock time of the solve call, which includes the solver's internal model translation and presolve; for CPLEX CP it additionally includes starting the external \texttt{cpoptimizer} process and transferring the model. A cross-solver evaluation across five backends (Glucose3, Glucose4, CaDiCaL, MapleSAT, CryptoMiniSAT5) and a first-feasible-solution fairness benchmark for CP/MIP (Section \ref{sec:fairness}) were also conducted. Because three repetitions provide only a coarse estimate of dispersion, Section \ref{sec:noise} additionally reports coefficient-of-variation diagnostics and a dedicated 10-repetition re-measurement. Since a CDCL solver is deterministic for a fixed input, repeating the same CNF measures timer noise only; Section \ref{sec:ordering} therefore re-runs every SAT encoding on randomly permuted but logically equivalent CNFs.
+
+\textbf{Environment.} All experiments ran on a laptop with an Intel Core i7-13650HX CPU and 24\,GB RAM under Windows 11, using Python 3.12, PySAT 1.9 (Glucose 3.0 and the other backends bundled with it), Google OR-Tools 9.15, IBM CPLEX 22.1 Community Edition (via \texttt{docplex}), and Gurobi 13.0 with the size-limited pip licence. Each SAT solve runs in a separate process so that a timeout can be enforced; in the original runs the timeout clock started before the CNF was transferred to that process, which matters only for the multi-million-clause instances (see Section \ref{sec:threats}). The harness has since been corrected to start the clock after the CNF is loaded. The supplementary experiments (ordering study, CPLEX CP re-run, noise re-measurement) used the same machine and library versions; the $N=100$ part of the ordering study was run under Python 3.14 instead of 3.12, which does not affect the native solver code.
 
 \begin{table}[htbp]
     \centering
     \renewcommand{\arraystretch}{1.10}
-    \caption{Scalability stress-test on massive instances $N=100$ and $N=200$ (in seconds; average of 3 runs for converging methods, 1 run for timed-out methods). Time limit: $40$s for SAT, $60$s for CP-SAT. ``--'' denotes timeout or ungenerated clauses.}
+    \caption{Scalability stress-test on massive instances $N=100$ and $N=200$ (in seconds; average of 3 runs for converging methods, 1 run for timed-out methods). Time limit: $40$s for SAT, $60$s for CP-SAT. ``--'' denotes a timeout, or not applicable (clauses for CP-SAT).}
     \label{tab:extralarge}
-    \begin{tabular}{l S[table-format=4.0] S[table-format=8.0] S[table-format=1.3] S[table-format=2.3]}
+    \begin{tabular}{l S[table-format=3.0] S[table-format=8.0] S[table-format=1.3] S[table-format=2.3]}
         \toprule
         \rowcolor{rowtint}
         \textbf{Encoding / Solver} & \textbf{N} & \textbf{Clauses} & \textbf{Gen (s)} & \textbf{Solve (s)} \\
@@ -236,15 +254,19 @@ Experiments were conducted across baseline dimensions $N \in \{8, 10, 15, 20, 25
     \end{tabular}
 \end{table}
 
-Table \ref{tab:extralarge} exposes the \textbf{true breakdown point of SAT encodings}. At $N=100$, Binomial generates \textbf{1,646,850 clauses}—over $38$ times more than at $N=30$—yet solves in merely \textbf{$0.183$s}. In contrast, \emph{all} auxiliary-variable encodings (Sequential, Commander, Binary, Product) \textbf{exceed the $40$s feasibility threshold}, despite producing only $\frac{1}{14}$ to $\frac{1}{6}$ as many clauses. This strongly indicates that \textbf{CNF size does not dictate solving speed, and that auxiliary variables can severely degrade CDCL search heuristics}. At $N=200$, Binomial itself breaks down: taking $4.6$s merely to \emph{generate} $13,253,700$ clauses and failing to solve within $40$s—delineating the structural ceiling of pure SAT reductions. In contrast, CP-SAT (which introduces no auxiliary Booleans) solves $N=100$ in $0.64$s and $N=200$ in $5.9$s, sustaining robust scalability.
+Table \ref{tab:extralarge} exposes the \textbf{true breakdown point of SAT encodings}. At $N=100$, Binomial generates \textbf{1,646,850 clauses}—over $38$ times more than at $N=30$—yet solves in merely \textbf{$0.183$s}. In contrast, \emph{all} auxiliary-variable encodings (Sequential, Commander, Binary, Product) \textbf{exceed the $40$s feasibility threshold}, despite producing only $\frac{1}{14}$ to $\frac{1}{6}$ as many clauses. This shows that \textbf{CNF size does not dictate solving speed}; whether the auxiliary-variable encodings are intrinsically slow or merely unlucky with the default variable order is examined in Section \ref{sec:ordering}. At $N=200$, Binomial itself breaks down: it takes $4.6$s merely to \emph{generate} $13{,}253{,}700$ clauses and does not finish within the limit. In the original harness roughly half of the 40s budget was spent transferring and loading this CNF into the solver process; a standalone re-run confirms, however, that Glucose3 does not finish within $270$s of pure solving time, so the conclusion stands. CP-SAT, which builds its Boolean representation lazily, solves $N=100$ in $0.64$s and $N=200$ in $5.9$s. Note that the time limits in this table differ between SAT (40s) and CP-SAT (60s); since CP-SAT finished far below either limit, this does not affect the comparison.
 
 \subsection{Encoding-Size vs Runtime Analysis}
-Experimental findings in Figure \ref{fig:clauses} corroborate theoretical predictions: as $N$ scales from 8 to 50, Binomial clause volume grows quadratically, yielding a massive CNF with 203,425 clauses at $N=50$ (compared to 43,255 at $N=30$). In contrast, Sequential, Binary, Commander, and Product maintain compact formulas ranging between 28,887 and 57,219 clauses at $N=50$, achieved through auxiliary variable compression. Consequently, the gap in formula size widens substantially with larger board sizes.
+Experimental findings in Figure \ref{fig:clauses} corroborate theoretical predictions: although each Binomial AMO is quadratic in its length, the whole Binomial CNF grows cubically in $N$ because there are $\Theta(N)$ lines of length up to $N$, yielding a massive CNF with 203,425 clauses at $N=50$ (compared to 43,255 at $N=30$). In contrast, Sequential, Binary, Commander, and Product maintain compact formulas ranging between 28,887 and 57,219 clauses at $N=50$, achieved through auxiliary variable compression. Consequently, the gap in formula size widens substantially with larger board sizes. For Binomial the total can be stated exactly. Rows contribute $N$ ALO clauses and $N\binom{N}{2}$ AMO clauses, columns another $N\binom{N}{2}$, each diagonal direction $\sum_{\ell} \binom{\ell}{2} = 2\binom{N}{3} + \binom{N}{2}$ over its diagonals of length $\ell$, and symmetry breaking $\lfloor N/2 \rfloor$ unit clauses, giving
+\begin{equation}
+    |\mathrm{CNF}_{\text{Binomial}}(N)| = \frac{5N^3 - 6N^2 + 4N}{3} + \left\lfloor \frac{N}{2} \right\rfloor,
+\end{equation}
+which reproduces the measured counts exactly ($43{,}255$ at $N=30$, $1{,}646{,}850$ at $N=100$, $13{,}253{,}700$ at $N=200$).
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.58\textwidth]{chart_clauses_comparison.png}
-    \caption{Growth of clause count across SAT encodings as board size $N$ increases (logarithmic scale).}
+    \includegraphics[width=0.62\textwidth]{chart_clauses_comparison.png}
+    \caption{Number of clauses per encoding as a function of $N$ (both axes logarithmic; exact counts computed from the encoder). On log--log axes the slopes reflect the growth order: summing the per-line AMO cost over the $\Theta(N)$ rows, columns and diagonals gives $\Theta(N^3)$ for Binomial, $\Theta(N^{2.5})$ for Commander, $\Theta(N^2 \log N)$ for Binary and $\Theta(N^2)$ for Sequential and Product. Product and Sequential differ by less than $1\%$ and their curves coincide.}
     \label{fig:clauses}
 \end{figure}
 
@@ -267,7 +289,7 @@ Table \ref{tab:runtime} reports runtime metrics at $N=30$. Timing is decomposed 
         Product   & 10215 & 2426 & 0.00242 & 14.44840 \\
         \midrule
         CP-SAT    & {--}     &   {--}  & 0.00100 & 0.07755 \\
-        CPLEX-CP  & {--}     &   {--}  & 0.00120 & 0.04942 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00061 & 0.01570 \\
         CPLEX-MIP & {--}     &   {--}  & 0.01653 & 0.01133 \\
         Gurobi-MIP& {--}     &   {--}  & 0.00750 & 0.00063 \\
         \bottomrule
@@ -276,41 +298,87 @@ Table \ref{tab:runtime} reports runtime metrics at $N=30$. Timing is decomposed 
 
 Table \ref{tab:runtime} highlights a crucial insight: for Binomial, the majority of runtime ($0.016$s out of $0.029$s, or approximately $56\%$) is consumed by Python clause generation rather than the SAT solver core. A similar pattern emerges in CPLEX-MIP, where modeling overhead ($0.017$s) exceeds solving time ($0.011$s). This underscores the necessity of decoupling \emph{formulation overhead} from \emph{solving duration} when evaluating constraint encodings.
 
-\subsection{Measurement Noise and Statistical Reliability}
-\label{sec:noise}
-The repeated measurements reveal a systematic pattern in their dispersion that must be addressed before the rankings below are interpreted. At $N=30$ the coefficient of variation (CV, the standard deviation divided by the mean) is $0.4$--$2.3\%$ for the five SAT encodings, but $24.2\%$ for CP-SAT and $49.1\%$ for CPLEX-CP. The same asymmetry appears at every board size: across $N=8$--$30$, CP-SAT exhibits CVs of $3.9$--$44.4\%$ and CPLEX-CP of $10.1$--$32.7\%$, whereas the SAT encodings drop below $3\%$ as soon as $N \geq 20$.
-
-This is a measurement artefact rather than algorithmic nondeterminism. The high-variance configurations are precisely those whose absolute runtimes are on the order of a few milliseconds to tens of milliseconds, so fixed overheads contribute disproportionately to the mean. A dedicated re-measurement of CP-SAT at $N=30$ over 10 repetitions isolates two contributions: the first repetition is $1.37\times$ slower than the remaining nine ($0.0567$s vs.\ $0.0414$s), consistent with one-off engine initialisation, and among the remaining runs a single outlier of $0.0567$s coexists with a tight cluster of $0.039$--$0.044$s. Furthermore, the CV decreases monotonically as the measured interval lengthens: $50.1\%$ at $N=8$ ($\approx 4$ms), $6.4\%$ at $N=30$ ($\approx 44$ms), $4.1\%$ at $N=50$ ($\approx 141$ms). Once solving takes hundreds of milliseconds or more, operating-system scheduling and garbage collection are amortised and the measurement stabilises. Variance therefore reflects resolution, not instability of the search.
-
-The practical consequence is that differences between millisecond-scale configurations must not be compared at face value. At $N=30$ the confidence intervals overlap substantially: CP-SAT spans $[0.0588, 0.0963]$s and CPLEX-CP spans $[0.0252, 0.0737]$s, a gap of $0.028$s against a combined standard deviation of $0.031$s. Their gap-to-noise ratio is $0.92$, well below the conventional threshold of $2$, so \textbf{the ordering CPLEX-CP vs.\ CP-SAT at $N=30$ is not statistically supported} and no claim of superiority between them is made here. By contrast, the gap between Binomial ($0.0126$s) and CP-SAT amounts to $3.5$ pooled standard deviations, and the separations among the SAT encodings (e.g.\ Binomial vs.\ Product, $1{,}150\times$) are orders of magnitude larger than the noise. All qualitative conclusions of this study therefore rest on differences that exceed measurement uncertainty by a wide margin; only the fine-grained ordering within the sub-$100$ms group should be regarded as indicative rather than established.
-
-\subsection{Runtime Bottleneck Analysis}
+\subsection{Runtime Analysis on the Original Order}
 \label{sec:bottleneck}
-Inspection of Figure \ref{fig:runtime} uncovers a severe performance paradox in SAT solving: a smaller clause footprint does not guarantee faster execution.
-
-At $N=10$, solve times across all methods are negligible; however, divergence manifests sharply for $N \geq 25$. At $N=30$, \textbf{Product} exhibits the most severe degradation ($14.45$s), followed by \textbf{Binary} ($9.65$s). Conversely, \textbf{Binomial} completes in $0.029$s total, while \textbf{Commander} requires only $0.248$s—roughly $58$ times faster than Product. Notably, Binomial achieves the fastest pure \emph{solve} time ($0.0126$s), outperforming even Commander ($0.2485$s).
+Figure \ref{fig:runtime} shows solve times on the original variable order. At $N \leq 15$ all SAT encodings solve within $0.03$s; divergence appears from $N=20$, where Product ($0.61$s) is already $277\times$ slower than Binomial ($0.0022$s). At $N=30$ (Table \ref{tab:runtime}) Product needs $14.45$s and Binary $9.65$s, against $0.25$s for Commander, $0.21$s for Sequential and $0.0126$s for Binomial ($0.029$s including generation). A smaller CNF is therefore clearly no guarantee of faster solving: Binomial has the largest CNF and is the fastest encoding at every size up to $N=100$ on this order.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.58\textwidth]{chart_runtime_comparison.png}
-    \caption{Solving time bottleneck analysis (logarithmic scale) in large search spaces.}
+    \includegraphics[width=\textwidth]{chart_runtime_comparison.png}
+    \caption{Solve time versus $N$ (both axes logarithmic). Left: the five SAT encodings with Glucose3 on the original variable order; right: CP and MIP solvers. Points are means over repetitions and bars span min--max. Hollow markers denote timeouts, drawn at the time limit of that run, so the true time is at least that value; when several methods time out at the same $N$ their markers are spread horizontally around $N$. Time limits: $100$s ($N \leq 30$), $90$s ($N = 40, 50$), $40$s for SAT and $60$s for CP-SAT ($N = 100, 200$).}
     \label{fig:runtime}
 \end{figure}
 
-\begin{insightbox}{Core Empirical Insight: Search Heuristics vs.\ Implication Chains}
-\textbf{Bottleneck Explanation:} Performance degradation is governed not merely by auxiliary variable volume, but primarily by the \emph{implication chain length} and its alignment with unit propagation.
+\subsection{Measurement Noise and Statistical Reliability}
+\label{sec:noise}
+The repeated measurements reveal a systematic pattern in their dispersion that must be addressed before the rankings below are interpreted. We use the coefficient of variation (CV, the population standard deviation of the three repetitions divided by their mean). For the SAT encodings the CV at $N=30$ is $0.4$--$4.8\%$ and stays below $5\%$ for all $N \geq 20$. The two CP solvers, whose runtimes are a few to a few tens of milliseconds, are much noisier at small sizes: across $N=8$--$30$, CP-SAT shows CVs of $3.9$--$44.4\%$ and CPLEX-CP of $3.9$--$43.0\%$.
+
+We attribute this mainly to fixed overheads rather than to the search itself: when the measured interval is only milliseconds long, one-off costs such as initialisation and operating-system scheduling dominate. A dedicated re-measurement of CP-SAT with 10 repetitions per size (\texttt{results/cpsat\_noise\_per\_run.csv}, sample standard deviation) shows the CV decreasing as the measured interval lengthens: $147\%$ at $N=8$ (mean $5.3$ms), $11.4\%$ at $N=30$ ($38$ms) and $1.4\%$ at $N=50$ ($116$ms). At $N=8$ the dispersion is caused almost entirely by the first repetition ($27.7$ms versus a mean of $2.8$ms for the other nine), consistent with one-off initialisation; at $N=30$ and $N=50$ the first repetition is not slower than the rest. Once solving takes more than about a hundred milliseconds, the measurement stabilises.
+
+The practical consequence is that differences between millisecond-scale configurations must be checked against the noise before they are interpreted. At $N=30$ CP-SAT averages $0.0776 \pm 0.0188$s and CPLEX-CP $0.0157 \pm 0.0006$s (mean $\pm$ one standard deviation); the gap of $0.062$s is $3.3$ times the combined standard deviation and even the slowest CPLEX-CP repetition ($0.0162$s) is faster than the fastest CP-SAT run at $N=30$ in any session ($0.0349$s), so CPLEX-CP is faster in wall-clock terms. With only three repetitions, however, no formal significance test is meaningful. Note also that CPLEX-CP's wall-clock time is almost entirely overhead: the engine itself reports about $2$ms of solve time at $N=8$, $30$ and $50$, the remainder being the start-up of the external \texttt{cpoptimizer} process and model transfer. Its nearly constant $15$--$19$ms across all $N$ reflects this.
+
+Within-session dispersion also understates the true uncertainty. CP-SAT at $N=30$ averaged $0.078$s in the main benchmark, $0.038$s in the 10-repetition re-measurement and $0.036$s in the first-solution benchmark (Table \ref{tab:fairness}): the spread between sessions is larger than any within-session standard deviation. Millisecond-scale timings should therefore be read as order-of-magnitude indications only. For the SAT encodings an even larger source of variation exists that repetition cannot reveal at all, namely sensitivity to input order (Section \ref{sec:ordering}).
+
+\subsection{Sensitivity to Variable and Clause Order}
+\label{sec:ordering}
+A CDCL solver is deterministic: given the same CNF in the same order it performs the same search, so the repetitions above can only measure timer noise. Its search does, however, depend on the order of variables and clauses, which affects initial decision order and tie-breaking. To separate the effect of an encoding from the effect of one particular order, every encoding was solved at $N \in \{30, 50, 100\}$ on ten logically equivalent CNFs: seed $0$ is the original CNF, and seeds $1$--$9$ rename the variables by a random permutation and shuffle the clauses and the literals within each clause (\texttt{src/robustness.py}, Glucose3, $60$s limit per run, one run per seed). All $116$ runs that finished returned solutions accepted by the verification oracle. Table \ref{tab:ordering} summarises the results and Figure \ref{fig:ordering} shows every run.
+
+\begin{table}[htbp]
+    \centering
+    \renewcommand{\arraystretch}{1.08}
+    \caption{Glucose3 solve time (seconds) over ten equivalent CNFs per configuration: the original order (seed $0$) and nine random variable/clause permutations. ``$\geq 60$'' denotes a timeout; the median treats timeouts as $\geq 60$s and is therefore exact whenever fewer than half of the runs time out.}
+    \label{tab:ordering}
+    \begin{tabular}{l c r r r r c}
+        \toprule
+        \rowcolor{rowtint}
+        \textbf{Encoding} & \textbf{N} & \textbf{Original} & \textbf{Median} & \textbf{Min} & \textbf{Max} & \textbf{Timeouts} \\
+        \midrule
+        Binomial   & 30 & 0.012 & 0.002 & 0.001 & 0.012 & 0/10 \\
+        Sequential & 30 & 0.201 & 0.153 & 0.012 & 2.253 & 0/10 \\
+        Binary     & 30 & 6.412 & 0.012 & 0.003 & 6.412 & 0/10 \\
+        Commander  & 30 & 0.243 & 0.008 & 0.003 & 0.243 & 0/10 \\
+        Product    & 30 & 13.271 & 0.012 & 0.008 & 13.271 & 0/10 \\
+        \midrule
+        Binomial   & 50 & 0.194 & 0.005 & 0.003 & 0.194 & 0/10 \\
+        Sequential & 50 & 23.906 & 12.592 & 0.023 & {$\geq 60$} & 3/10 \\
+        Binary     & 50 & {$\geq 60$} & 0.024 & 0.004 & {$\geq 60$} & 1/10 \\
+        Commander  & 50 & 12.776 & 0.016 & 0.009 & 12.776 & 0/10 \\
+        Product    & 50 & {$\geq 60$} & 1.364 & 0.010 & {$\geq 60$} & 2/10 \\
+        \midrule
+        Binomial   & 100 & 0.185 & 0.027 & 0.023 & 0.185 & 0/10 \\
+        Sequential & 100 & {$\geq 60$} & {$\geq 60$} & {$\geq 60$} & {$\geq 60$} & 10/10 \\
+        Binary     & 100 & {$\geq 60$} & {$\geq 60$} & 0.412 & {$\geq 60$} & 9/10 \\
+        Commander  & 100 & {$\geq 60$} & 0.025 & 0.012 & {$\geq 60$} & 1/10 \\
+        Product    & 100 & {$\geq 60$} & {$\geq 60$} & 0.038 & {$\geq 60$} & 8/10 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{chart_ordering_sensitivity.png}
+    \caption{Every run of the ordering study (logarithmic time axis). Crosses mark the original order (hollow when it timed out); dots are the nine permuted CNFs; the bar is the median of all ten runs (omitted when at least half time out); triangles at the $60$s limit mark permuted runs that timed out, with their count.}
+    \label{fig:ordering}
+\end{figure}
+
+Four observations follow.
+
+\textbf{(1) The original order is unfavourable for every encoding.} In $13$ of the $15$ configurations the original order is the slowest of the ten runs or times out; even Binomial is $5.8\times$, $41.7\times$ and $6.8\times$ slower on its original order than its median at $N = 30, 50, 100$. The row-major numbering of the queen variables, with auxiliaries appended at the end, is therefore not a neutral choice.
+
+\textbf{(2) At $N=30$ most of the apparent gaps are artefacts of that order.} Product drops from $13.3$s to a median of $0.012$s ($1083\times$), Binary from $6.4$s to $0.012$s ($515\times$) and Commander from $0.24$s to $0.008$s ($32\times$). Their medians are at most $6.1\times$ Binomial's ($0.002$s), whereas the original-order results of Table \ref{tab:runtime} suggested gaps of up to three orders of magnitude.
+
+\textbf{(3) At larger $N$ genuine differences remain.} Sequential is the only encoding that is already slow at $N=30$ on most orders (median $74\times$ Binomial's); at $N=50$ its median is $12.6$s with $3/10$ timeouts, and at $N=100$ all ten runs time out. Binary and Product survive most permutations at $N=50$ (medians $0.024$s and $1.36$s) but fail on $9/10$ and $8/10$ orders at $N=100$. Their solved runs at $N=100$ ($0.41$s and $0.04$--$0.28$s) show that the instance is easy for these encodings in principle, but the solver rarely reaches such a run.
+
+\textbf{(4) Binomial and Commander are robust.} Both solve every permuted CNF at every size, with medians of $0.027$s and $0.025$s at $N=100$; the earlier conclusion that ``every auxiliary-variable encoding fails at $N=100$'' (Table \ref{tab:extralarge}) is true only for the original order and does not hold for Commander.
+
+Note finally that Commander is the only auxiliary encoding whose auxiliaries are functionally defined (Table \ref{tab:theory}), while the three encodings that degrade at $N=100$ all have auxiliaries that can be True with no queen placed. This correlation is consistent with the hypothesis that unconstrained auxiliaries give the solver many irrelevant decision points, but with five encodings it is an observation, not a demonstration.
+
+\begin{insightbox}{Interpreting the SAT Results}
+\textbf{What the data support.} (i) CNF size does not predict solve time: Binomial, the largest encoding, never times out and has the lowest median time at $N=30$ and $50$; at $N=100$ only Commander matches it ($0.025$s vs.\ $0.027$s). (ii) Propagation strength does not explain the differences, since all five encodings are ACUP (Table \ref{tab:theory}). (iii) Single-order measurements exaggerate the gaps: at $N=30$ the slowdowns of Binary, Commander and Product shrink by factors of $515$, $32$ and $1083$ once the order is randomised (Table \ref{tab:ordering}). (iv) Genuine differences appear at larger $N$: Sequential degrades consistently from $N=30$ on, and Binary and Product fail on most orders at $N=100$, while Commander stays as fast as Binomial.
 
 \smallskip
-On the positive end, \textbf{Commander} maintains superior performance ($0.248$s at $N=30$, $58\times$ faster than Product) despite generating $1,606$ auxiliary variables. This efficiency arises because commander constraints are partitioned into localized sub-groups of size $\sqrt{n}$, enabling unit propagation to immediately eliminate an entire sub-group as soon as a variable is assigned True.
-
-\smallskip
-On the negative end, \textbf{Product} suffers catastrophic slowdown ($14.45$s at $N=30$). Arranging variables in a 2D matrix forces each queen variable to bind simultaneously to row and column auxiliaries, yielding elongated and diffuse implication chains. A decisive theoretical factor compounds this structural weakness: \textbf{the Product encoding provides only weak propagation strength} (Table \ref{tab:theory}). Although it compresses the auxiliary-variable count to $O(\sqrt{n})$ and the clause count to $O(n)$, its row and column auxiliaries are under-constrained, so unit propagation prunes far less than the original AMO constraint. Combined with the fact that Glucose3's VSIDS heuristic becomes disoriented, spreading its attention across the auxiliary 2D-matrix variables rather than the primary queen variables, the solver is compelled to enumerate deep into incorrect branches, producing the observed combinatorial blow-up in solving time. \textbf{Binary} closely follows ($9.65$s) with only partial propagation strength. Meanwhile, \textbf{Sequential} occupies an intermediate tier ($0.208$s), as its sequential accumulator enforces arc consistency through unit propagation and therefore prunes far better than the 2D grid of Product.
-
-\smallskip
-It is worth noting, however, that ACUP does not guarantee uniformly strong performance as the search space grows. Sequential grows from $0.21$s at $N=30$ to $3.68$s at $N=40$ and $32.2$s at $N=50$, whereas the auxiliary-free Binomial reaches $0.20$s at $N=50$. A plausible mechanism is that its accumulator induces a long linear dependency chain ($s_1 \rightarrow s_2 \rightarrow \cdots \rightarrow s_{n-1}$); conflict analysis across such chains produces learned clauses spanning many decision levels, i.e.\ with high Literal Block Distance (LBD) \cite{audemard2009predicting}. Because Glucose3 schedules clause deletion primarily by LBD, high-LBD clauses are the first to be discarded, so propagation support may be lost and re-derived repeatedly. This is consistent with the observed deterioration, although our experiments measure runtime only and do not log LBD values directly, so the mechanism remains a hypothesis rather than a measured finding.
+\textbf{What remains a hypothesis.} Two mechanisms are plausible but were not measured. First, auxiliaries that are not functionally defined (Sequential, Binary, Product) give the decision heuristic variables whose values carry no information about the board; Commander, whose auxiliaries are defined, is the only auxiliary encoding that stays robust. Second, Sequential's chain $s_1 \Rightarrow s_2 \Rightarrow \cdots \Rightarrow s_{n-1}$ makes conflicts span many decision levels, which may produce learned clauses with high Literal Block Distance (LBD) that Glucose deletes early \cite{audemard2009predicting}. Testing either explanation would require solver statistics (decisions on auxiliary variables, LBD distributions), which our harness does not record.
 \end{insightbox}
-
-Finally, \textbf{Binomial}—devoid of auxiliary variables—achieves the fastest solve time among SAT encodings ($0.0126$s). This reaffirms that CNF volume is secondary; the true computational penalty stems from heuristic dilution caused by auxiliary variables.
 
 \subsection{Fair SAT vs MIP Benchmark: First Feasible Solution}
 \label{sec:fairness}
@@ -319,12 +387,12 @@ A fundamental methodological issue when comparing SAT with ILP/MIP solvers is th
 \begin{table}[htbp]
     \centering
     \renewcommand{\arraystretch}{1.10}
-    \caption{Comparison between default (optimization) mode and first-feasible-solution mode across board sizes $N$, in seconds (average of 5 runs). ``$\Delta$'' represents the ratio $\text{Solve}_{\text{optimal}}/\text{Solve}_{\text{first-sol}}$; $\Delta \approx 1$ indicates that the stopping criterion causes no performance discrepancy.}
+    \caption{Comparison between default mode and first-feasible-solution mode across board sizes $N$, in seconds (average of 5 runs). ``$\Delta$'' represents the ratio $\text{Solve}_{\text{default}}/\text{Solve}_{\text{first-sol}}$; $\Delta \approx 1$ indicates that the stopping criterion causes no performance discrepancy.}
     \label{tab:fairness}
     \begin{tabular}{l S[table-format=2.0] S[table-format=1.6] S[table-format=1.6] S[table-format=1.2]}
         \toprule
         \rowcolor{rowtint}
-        \textbf{Solver} & \textbf{N} & \textbf{Solve -- optimal (s)} & \textbf{Solve -- first-sol (s)} & \textbf{$\Delta$} \\
+        \textbf{Solver} & \textbf{N} & \textbf{Solve -- default (s)} & \textbf{Solve -- first-sol (s)} & \textbf{$\Delta$} \\
         \midrule
         Gurobi-MIP & 20 & 0.000237 & 0.000268 & 0.88 \\
         CPLEX-MIP  & 20 & 0.003565 & 0.003683 & 0.97 \\
@@ -340,12 +408,14 @@ A fundamental methodological issue when comparing SAT with ILP/MIP solvers is th
     \end{tabular}
 \end{table}
 
-\textbf{Surprising finding: the first-solution mode causes virtually no difference ($\Delta \approx 1.0$ across all tested instances).} Two key methodological factors explain this phenomenon. First, N-Queens is fundamentally a \emph{feasibility} problem rather than an optimization problem: the MIP formulations constructed here \textbf{contain no objective function}. Consequently, MIP solvers terminate immediately upon finding the first feasible integer solution—imposing \texttt{SolutionLimit=1} yields no acceleration. (Independent verification: Gurobi reports \texttt{SolCount=1} and \texttt{ObjBound=-inf}, confirming that no optimality proof is performed.) Second, in CP-SAT, \texttt{stop\_after\_first\_solution} merely omits optimality bounds, but at these scales feasibility is reached almost instantaneously. \emph{Thus, any conjecture that MIP is disadvantaged due to optimality proofs is refuted for this problem.} This further solidifies our central thesis: the performance disparity between SAT and CP/MIP does \textbf{not} arise from stopping criteria, but from fundamental differences in \emph{modeling paradigm}—MIP branches directly on primary variables without auxiliary noise. Even under identical first-solution termination criteria, Gurobi outperforms the fastest SAT encoding at $N=30$ (Binomial, $0.0126$s solve time) by roughly $20\times$.
+\textbf{Surprising finding: the first-solution mode causes virtually no difference ($\Delta \approx 1.0$ across all tested instances).} Two key methodological factors explain this phenomenon. First, N-Queens is fundamentally a \emph{feasibility} problem rather than an optimization problem: the MIP formulations constructed here \textbf{contain no objective function}. Consequently, MIP solvers terminate immediately upon finding the first feasible integer solution---imposing \texttt{SolutionLimit=1} yields no acceleration. (Independent verification: for $N=30$ Gurobi reports \texttt{SolCount=1}, \texttt{ObjVal=ObjBound=0} and \texttt{NodeCount=0}; at $N=40$ it explores a single node.) Second, CP-SAT has no objective either, so \texttt{stop\_after\_first\_solution} changes nothing. \emph{Thus, any conjecture that MIP is disadvantaged due to optimality proofs is refuted for this problem.}
 
-Finally, non-SAT solvers demonstrate overwhelming dominance, with \textbf{Gurobi-MIP emerging as the overall fastest solver} ($0.00063$s solve time at $N=30$, approximately $20\times$ faster than Binomial and $23,000\times$ faster than Product). \textbf{CPLEX-MIP} follows closely with $0.0113$s. In the CP domain, \textbf{CPLEX-CP} ($0.0494$s) and \textbf{CP-SAT} ($0.0776$s) both clearly outperform the auxiliary-variable SAT encodings (commander $0.248$s and slower), but lie behind Binomial ($0.0126$s); however, as analysed in Section \ref{sec:noise}, the difference between these two CP solvers is smaller than the measurement noise at this scale and is not claimed to be significant. It is worth observing that Python modeling overhead for commercial solvers is nontrivial (CPLEX-MIP: $0.017$s, Gurobi: $0.0075$s), again reinforcing the necessity of separating formulation latency from solve latency.
+The node counts also tell us \emph{why} Gurobi is fast: at $N=20$ and $30$ it does not branch at all, and at $N=40$ it needs a single node. The solution is found during presolve and root-node primal heuristics, so its advantage cannot be attributed to ``branching on primary variables''; it reflects the strength of these generic heuristics on a highly structured assignment-type model. Under the first-solution criterion Gurobi ($0.000335$s at $N=30$) is about $37\times$ faster than the fastest Glucose3 configuration (Binomial, $0.0126$s).
+
+Overall, \textbf{Gurobi-MIP is the fastest solver at $N \leq 30$} in the default runs ($0.00063$s solve time at $N=30$, about $20\times$ faster than Binomial); at $N=40$ CPLEX-CP ($0.016$s) is faster than Gurobi ($0.028$s). \textbf{CPLEX-MIP} follows with $0.0113$s. In the CP domain, \textbf{CPLEX-CP} ($0.0157$s) and \textbf{CP-SAT} ($0.0776$s) both lie \emph{behind} Binomial with Glucose3 ($0.0126$s). The paradigm ranking is thus not ``CP/MIP above SAT'': a well-chosen SAT encoding is competitive with both CP solvers. It is worth observing that Python modeling overhead for commercial solvers is nontrivial (CPLEX-MIP: $0.017$s, Gurobi: $0.0075$s), again reinforcing the necessity of separating formulation latency from solve latency.
 
 \subsection{Cross-Solver SAT Benchmark}
-To disentangle solver architecture from encoding formulation, we evaluated identical CNF models across five distinct PySAT backends: Glucose3, Glucose4, CaDiCaL, MapleSAT, and CryptoMiniSAT5. Table \ref{tab:crosssolver} summarizes the results at $N=30$ for Binomial and Sequential encodings. All solvers produced valid solutions; clause generation time is invariant across solvers due to shared encoders.
+To disentangle solver architecture from encoding formulation, we evaluated identical CNF models across five distinct PySAT backends: Glucose3, Glucose4, CaDiCaL, MapleSAT, and CryptoMiniSAT5. Table \ref{tab:crosssolver} summarizes the results at $N=30$ for Binomial and Sequential encodings. All solvers produced valid solutions. The CNF given to every solver is identical; the differences in the \emph{Gen} column are timing noise of the Python generator, not solver effects. The backends are the PySAT builds of Glucose 3.0, Glucose 4.1, CaDiCaL 1.9.5, MapleSAT and CryptoMiniSAT 5.
 
 \begin{table}[htbp]
     \centering
@@ -372,12 +442,14 @@ To disentangle solver architecture from encoding formulation, we evaluated ident
     \end{tabular}
 \end{table}
 
-The empirical data reveals a striking trend: \textbf{solver rankings reverse depending on the encoding structure}. Under Binomial encoding, \textbf{CryptoMiniSAT5} dominates ($0.00105$s) thanks to its advanced XOR/equivalence preprocessing and propagation engines, followed by Glucose3 ($0.01260$s) and Glucose4 ($0.01263$s), while MapleSAT ($0.02377$s) and CaDiCaL ($0.04608$s) lag behind. However, under Sequential encoding, \textbf{CryptoMiniSAT5 maintains first place} ($0.04713$s), followed by CaDiCaL ($0.12967$s), Glucose3 ($0.20740$s), MapleSAT ($0.54301$s), and Glucose4 ranks last ($0.89354$s). This substantiates our core thesis: \emph{the efficiency of a (solver, encoding) pair cannot be deduced solely from encoding topology; rather, it hinges upon the synergy between clause learning heuristics and unit propagation dynamics}. Switching backends from Glucose3 to CryptoMiniSAT5 yields a $4.4\times$ speedup on Sequential ($0.20740\text{s} \to 0.04713\text{s}$) and a $12\times$ speedup on Binomial ($0.01260\text{s} \to 0.00105\text{s}$)—quantitatively proving that backend architecture exerts a profound influence on identical CNF formulations. Nevertheless, a gap remains between the best SAT solver ($0.04713$s, CryptoMiniSAT5) and high-level solvers (CPLEX-CP: $0.04942$s, Gurobi-MIP: $0.00063$s at $N=30$), reiterating that Boolean reduction incurs intrinsic overhead.
+The ranking of the solvers \textbf{partially reorders between encodings}. CryptoMiniSAT5 is fastest under both ($0.00105$s on Binomial, $0.04713$s on Sequential), but the others swap places: CaDiCaL is last on Binomial and second on Sequential, while Glucose4, tied with Glucose3 for second place on Binomial ($0.0126$s), is last on Sequential. The efficiency of a (solver, encoding) pair therefore cannot be predicted from the encoding alone. Switching from Glucose3 to CryptoMiniSAT5 yields a $4.4\times$ speedup on Sequential and a $12\times$ speedup on Binomial. We do not attribute this to a specific feature of CryptoMiniSAT5: the instances contain no XOR constraints, and each cell of the table is a single run on a single variable order, so given the ordering sensitivity shown in Section \ref{sec:ordering} these results are indicative only.
 
-\subsection{Scalability Verification at $N=40$ and $N=50$}
-To verify that these dynamics extend beyond small-to-moderate scales, we evaluated $N=40$ under a 90-second timeout. Results (Table \ref{tab:scalability}) show that \textbf{Binomial remains the fastest SAT encoding} ($0.048$s solve time, 3-run average), consolidating—rather than reversing—its lead from $N=30$: it is now $77\times$ faster than Sequential ($3.68$s) and $290\times$ faster than Commander ($13.82$s), while \textbf{Binary and Product exceed the 90s feasibility threshold}. This underscores that as problem dimensions scale, generating $103,540$ clauses becomes negligible compared to the heuristic benefits of an auxiliary-free variable space.
+Notably, CryptoMiniSAT5 with Binomial ($0.00105$s) is faster at $N=30$ than CP-SAT, CPLEX-CP and CPLEX-MIP, and within a factor of two of Gurobi-MIP ($0.00063$s). Although these numbers come from different sessions and should be compared at the order-of-magnitude level only (Section \ref{sec:noise}), they do not support the claim that Boolean reduction is inherently slower than CP or MIP on this problem; what matters is the combination of encoding and solver.
 
-Remarkably, \textbf{Gurobi-MIP} preserves its commanding lead with only $0.028$s solve time, followed by \textbf{CPLEX-CP} ($0.034$s) and \textbf{CP-SAT} ($0.134$s). An important tooling observation: \textbf{CPLEX-MIP Community Edition} reached its 1,000-variable ceiling at $N=40$ ($1,600$ variables) and could not execute. These findings provide empirical confirmation that SAT feasibility is dictated primarily by encoding topology (auxiliary variables and implication chains) rather than problem scale alone.
+\subsection{\texorpdfstring{Scalability Verification at $N=40$ and $N=50$}{Scalability Verification at N=40 and N=50}}
+To verify that these dynamics extend beyond small-to-moderate scales, we evaluated $N=40$ under a 90-second timeout. Results (Table \ref{tab:scalability}) show that \textbf{Binomial remains the fastest SAT encoding} ($0.048$s solve time, 3-run average), consolidating—rather than reversing—its lead from $N=30$: it is now $77\times$ faster than Sequential ($3.68$s) and $289\times$ faster than Commander ($13.82$s), while \textbf{Binary and Product exceed the 90s feasibility threshold}. Generating Binomial's $103{,}540$ clauses costs only $0.056$s, so its larger CNF is not a practical obstacle at this size.
+
+Among the other paradigms, \textbf{CPLEX-CP} needs $0.016$s, \textbf{Gurobi-MIP} $0.028$s (one branch-and-bound node) and \textbf{CP-SAT} $0.134$s. An important tooling observation: \textbf{CPLEX-MIP Community Edition} reached its 1,000-variable ceiling at $N=40$ ($1,600$ variables) and could not execute. Because the original-order SAT results at this size are strongly affected by input order (Section \ref{sec:ordering}), the table should be read as one sample per encoding rather than as a definitive ranking.
 
 \begin{table}[htbp]
     \centering
@@ -396,19 +468,19 @@ Remarkably, \textbf{Gurobi-MIP} preserves its commanding lead with only $0.028$s
         Product   & 18484 & 3998 & 0.00408 & {-- (timeout)} \\
         \midrule
         CP-SAT    & {--}     &   {--}  & 0.00113 & 0.13359 \\
-        CPLEX-CP  & {--}     &   {--}  & 0.00085 & 0.03439 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00076 & 0.01628 \\
         CPLEX-MIP & {--}     &   {--}  & {--}      & {-- (exceeded 1000-var limit)} \\
         Gurobi-MIP& {--}     &   {--}  & 0.01653 & 0.02807 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-At the harsher scale of $N=50$, this trajectory is fully reaffirmed (Table \ref{tab:scalability50}). \textbf{Binomial} remains the fastest SAT encoding ($0.203$s solve time for $203,425$ clauses), whereas \textbf{Binary} and \textbf{Product} fail completely within the 90-second limit. This stark contrast is consistent with our central hypothesis: compressing clause counts through auxiliary variables, unless the auxiliary structure is carefully engineered (as in Commander), can actively destabilize the CDCL search process.
+At the harsher scale of $N=50$, this trajectory is fully reaffirmed (Table \ref{tab:scalability50}). \textbf{Binomial} remains the fastest SAT encoding ($0.203$s solve time for $203,425$ clauses), whereas \textbf{Binary} and \textbf{Product} fail completely within the 90-second limit. Commander ($15.9$s) and Sequential ($32.2$s, single run) still finish but are two orders of magnitude slower than Binomial. Section \ref{sec:ordering} shows how much of this gap is due to the encodings themselves and how much to the particular input order.
 
 \begin{table}[htbp]
     \centering
     \renewcommand{\arraystretch}{1.10}
-    \caption{Scalability benchmark at $N=50$ (average of 3 runs for converging methods, 1 run for timed-out methods; 90s time limit), in seconds. ``--'' denotes timeout or model/license limit exceeded.}
+    \caption{Scalability benchmark at $N=50$ (average of 3 runs for converging methods except Sequential, which was run once; 1 run for timed-out methods; 90s time limit), in seconds. ``--'' denotes timeout or model/license limit exceeded.}
     \label{tab:scalability50}
     \begin{tabular}{l S[table-format=6.0] S[table-format=5.0] S[table-format=1.5] S[table-format=2.5]}
         \toprule
@@ -422,29 +494,56 @@ At the harsher scale of $N=50$, this trajectory is fully reaffirmed (Table \ref{
         Product   & 29353 & 5910 & 0.00548 & {-- (timeout)} \\
         \midrule
         CP-SAT    & {--}     &   {--}  & 0.00233 & 0.28626 \\
-        CPLEX-CP  & {--}     &   {--}  & 0.00084 & 0.02852 \\
+        CPLEX-CP  & {--}     &   {--}  & 0.00053 & 0.01517 \\
         CPLEX-MIP & {--}     &   {--}  & {--}      & {-- (exceeded 1000-var limit)} \\
         Gurobi-MIP& {--}     &   {--}  & {--}      & {-- (exceeded license limit)} \\
         \bottomrule
     \end{tabular}
 \end{table}
 
+\subsection{Threats to Validity}
+\label{sec:threats}
+\begin{itemize}
+    \setlength{\itemsep}{1pt}
+    \setlength{\parskip}{0pt}
+    \item \textbf{Single input order.} Tables \ref{tab:extralarge}, \ref{tab:runtime}, \ref{tab:crosssolver}, \ref{tab:scalability} and \ref{tab:scalability50} and Figure \ref{fig:runtime} use one fixed variable and clause order per instance. Section \ref{sec:ordering} shows that this order alone can change Glucose3 runtimes by two to three orders of magnitude, so per-cell comparisons in those tables should not be over-interpreted.
+    \item \textbf{One instance per size.} N-Queens has a single satisfiable instance per $N$; results may not transfer to other problems built from AMO constraints.
+    \item \textbf{Different time limits.} The limits differ between experiments (40, 60, 90 and 100s). Timed-out entries are reported as such and never averaged with finished runs.
+    \item \textbf{Timeout accounting.} In the original runs the SAT timeout included transferring the CNF to the solver process. This is negligible below $10^6$ clauses but consumed about half of the budget for Binomial at $N=200$ (Table \ref{tab:extralarge}); the harness now starts the clock after loading.
+    \item \textbf{Re-measured CPLEX-CP.} The original CPLEX-CP runs did not set \texttt{Workers=1}, so CP Optimizer used all CPU cores. All CPLEX-CP figures in this report come from a single-threaded re-run; the original multi-threaded numbers are kept in \texttt{results/cplexcp\_multithread\_original.csv}.
+    \item \textbf{Asymmetric symmetry breaking.} Only the SAT encodings include the first-row symmetry-breaking clauses.
+    \item \textbf{Licence limits.} CPLEX Community Edition and the pip Gurobi licence cap model size, so MIP results are missing at $N \geq 40$ (CPLEX) and $N \geq 50$ (Gurobi).
+    \item \textbf{Timing noise.} Millisecond-scale timings vary between sessions by more than $2\times$ (Section \ref{sec:noise}). Even long deterministic runs vary: the identical original-order CNF of Binary at $N=30$ took $9.65$s in the main benchmark and $6.41$s in the ordering study, presumably owing to CPU frequency and thermal state of the laptop. This is small compared with the ordering effects but rules out precise cross-session ratios.
+\end{itemize}
+
 \section{Conclusion}
-This study provides a rigorous quantitative and theoretical investigation of exact solving methodologies for the N-Queens problem. Contrary to common intuition, compressing CNF clause counts by introducing auxiliary variables frequently induces severe performance penalties in large search spaces by corrupting CDCL branching heuristics. Crucially, the severity of degradation depends on the structural topology of the encoding rather than the raw auxiliary variable count: Commander preserves commendable performance due to localized grouping that fosters rapid unit propagation, whereas Product degrades catastrophically due to elongated, cross-matrix implication chains and, fundamentally, to its weak propagation strength—its under-constrained row and column auxiliaries prevent the early pruning of infeasible branches (Table \ref{tab:theory}). Furthermore, this study demonstrates that for tightly constrained combinatorial problems, Constraint Programming (CP) and Integer Linear Programming (ILP) deliver vastly superior modeling abstractions and solving speeds compared to Boolean reduction. Scalability evaluations at $N=40$ and $N=50$ solidify these conclusions: while Binomial readily converges at $N=50$ (despite instantiating $203,425$ clauses), inefficient auxiliary encodings (Binary and Product) break down, while CP and ILP engines resolve instances in milliseconds. Stress-testing at $N=100$ and $N=200$ precisely establishes the \emph{breakdown boundary}: at $N=100$, Binomial solves in $0.183$s across $1,646,850$ clauses, whereas \emph{every} auxiliary-variable encoding exceeds the $40$s limit; at $N=200$, Binomial itself collapses under the weight of generating $13,253,700$ clauses in $4.6$s. Additionally, first-feasible-solution benchmarking reveals that termination criteria do \emph{not} explain the SAT vs. MIP/CP gap ($\Delta \approx 1.0$ across all instances), indicating that the dominance of CP and MIP is driven by direct variable branching rather than solver stopping mechanics. Finally, a dedicated noise analysis establishes the limits of the reported orderings: differences among millisecond-scale configurations, such as CPLEX-CP versus CP-SAT, fall within measurement uncertainty (gap-to-noise ratio $0.92$), whereas the central SAT results are separated by several pooled standard deviations and by orders of magnitude.
+This study evaluated five SAT encodings of the AMO constraint on the N-Queens problem, together with CP and MIP solvers, and checked its own measurements for two common pitfalls. Its findings are as follows.
+
+\begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \setlength{\parskip}{0pt}
+    \item \textbf{All five encodings are correct and ACUP.} Differences in solving time therefore cannot be attributed to weaker unit propagation; they arise from search dynamics.
+    \item \textbf{CNF size does not predict speed.} Binomial produces the largest CNF ($\frac{5N^3-6N^2+4N}{3} + \lfloor N/2 \rfloor$ clauses) yet is the fastest SAT encoding on the original order up to $N=100$ and never times out on any order. Its limit is size itself: at $N=200$ the $13.25$ million clauses take $4.6$s to generate and Glucose3 does not finish within $270$s of solving.
+    \item \textbf{Single-order results are unreliable.} The original variable order was among the slowest of ten equivalent orders in $13$ of $15$ configurations. At $N=30$ the apparent gaps between encodings shrink from up to three orders of magnitude to at most $6.1\times$ Binomial's median once the order is randomised (Sequential excepted).
+    \item \textbf{Genuine differences appear at scale.} Sequential degrades consistently from $N=30$ on and fails on every order at $N=100$; Binary and Product fail on $9/10$ and $8/10$ orders at $N=100$; Commander remains as fast as Binomial ($0.025$s vs.\ $0.027$s median). The three degrading encodings are exactly those whose auxiliaries are not functionally defined, a correlation that merits further study with solver statistics.
+    \item \textbf{Paradigms.} Gurobi solves every size its licence admits (up to $N=40$) in at most $0.03$s, with zero branch-and-bound nodes at $N=20$ and $30$ and one at $N=40$; CPLEX CP needs $15$--$19$ms, almost all of it process overhead; CP-SAT scales to $N=200$ in $5.9$s. A good (encoding, solver) pair is competitive: CryptoMiniSAT5 with Binomial solves $N=30$ in $1.05$ms, faster than both CP solvers and CPLEX MIP. Stopping criteria do not explain the differences, since the MIP models have no objective.
+    \item \textbf{Methodology.} Repeating a deterministic solver on one input measures only timer noise; between-session variation exceeds within-session variation for millisecond-scale timings; and the CPLEX CP configuration had to be re-measured after a threading error was found. Future work should report distributions over input permutations and record solver statistics to test the mechanisms proposed in Section \ref{sec:ordering}.
+\end{itemize}
 
 \section*{Data Availability}
 \begin{notebox}{Reproducibility Statement}
-All source code, environment configurations, and raw experimental datasets generated in this study are publicly hosted and openly accessible on GitHub: \url{https://github.com/Messionly1/NQueens-SAT-Solving}. The repository includes all five SAT encodings, benchmark wrappers for OR-Tools CP-SAT, CPLEX CP, CPLEX MIP, and Gurobi, alongside full CSV results, visualization scripts, and unit tests. The claims of Table \ref{tab:theory} regarding propagation strength can be reproduced with \texttt{src/verify\_propagation.py}, which checks whether a Product auxiliary variable can be satisfied while every cell variable is false. Detailed instructions for reproducing the entire experimental pipeline are provided in the repository's README file.
+All source code, environment configurations, and raw experimental datasets generated in this study are publicly hosted and openly accessible on GitHub: \url{https://github.com/Messionly1/NQueens-SAT-Solving}. The repository includes all five SAT encodings, benchmark wrappers for OR-Tools CP-SAT, CPLEX CP, CPLEX MIP, and Gurobi, alongside full CSV results, visualization scripts, and unit tests. The claims of Table \ref{tab:theory} can be reproduced with \texttt{src/verify\_propagation.py}, which checks AMO correctness, ACUP and whether auxiliaries are functionally defined for all five encodings; the ordering-sensitivity study of Section \ref{sec:ordering} is reproduced with \texttt{src/robustness.py}, the CP-SAT noise re-measurement with \texttt{src/noise\_check.py}, and all figures with \texttt{src/plot\_charts.py}, which reads only the CSV files in \texttt{results/}. Detailed instructions for reproducing the entire experimental pipeline are provided in the repository's README file.
 \end{notebox}
 
 \begin{thebibliography}{00}
 \footnotesize
 \setlength{\itemsep}{0pt}
 \setlength{\parskip}{0pt}
-\bibitem{chung1988labelings} Chung, F.R.K., 1988. Labelings of graphs, in: Selected Topics in Graph Theory. Academic Press, pp. 151–168.
+\bibitem{bell2009survey} Bell, J., Stevens, B., 2009. A survey of known results and research areas for $n$-queens. Discrete Mathematics 309, 1–31.
 \bibitem{warners1998nonlinear} Warners, J.P., 1998. A linear-time transformation of linear inequalities into conjunctive normal form. Information Processing Letters 68, 63–69.
 \bibitem{sinz2005towards} Sinz, C., 2005. Towards an optimal CNF encoding of boolean cardinality constraints, in: Principles and Practice of Constraint Programming (CP 2005). Springer, pp. 827–831.
-\bibitem{gent2004generic} Gent, I.P., Nightingale, P., 2004. A generic polynomial time approach to the encoding of CSP into SAT. Constraints 9, 85–102.
+\bibitem{gent2002arc} Gent, I.P., 2002. Arc consistency in SAT, in: Proceedings of the 15th European Conference on Artificial Intelligence (ECAI 2002). IOS Press, pp. 121–125.
+\bibitem{bailleux2003efficient} Bailleux, O., Boufkhad, Y., 2003. Efficient CNF encoding of Boolean cardinality constraints, in: Principles and Practice of Constraint Programming (CP 2003). Springer, LNCS 2833, pp. 108–122.
 \bibitem{klieber2007efficient} Klieber, W., Kwon, G., 2007. Efficient CNF encoding for selecting 1 from N objects, in: Fourth Workshop on Constraints in Formal Verification (CFV).
 \bibitem{chen2010new} Chen, J., 2010. A new SAT encoding of the At-Most-One constraint, in: Tenth International Workshop on Constraint Modelling and Reformulation (ModRef).
 \bibitem{marques2008conflict} Marques-Silva, J., Lynce, I., Malik, S., 2009. Conflict-driven clause learning SAT solvers, in: Handbook of Satisfiability. IOS Press, pp. 131–153.

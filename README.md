@@ -6,7 +6,11 @@
 
 Dự án này là đồ án môn học nghiên cứu cách giải bài toán **N-Queens** bằng các phương pháp tối ưu hóa chính xác (Exact Optimization). Trọng tâm của dự án là **mô hình hóa bài toán sang Dạng chuẩn hội (CNF)** để giải bằng **SAT Solver**, đồng thời **đối chuẩn hiệu năng** với hai họ phương pháp chính xác khác là **Constraint Programming (CP)** và **Integer Linear Programming (ILP/MIP)**.
 
-Mục tiêu của dự án không chỉ là "giải được" bài toán, mà là trả lời một câu hỏi nghiên cứu: **việc nén số lượng mệnh đề bằng biến phụ (auxiliary variables) có thực sự giúp bộ giải SAT nhanh hơn không?** Kết quả thực nghiệm (trình bày đầy đủ trong báo cáo kèm theo) cho thấy câu trả lời là *không* — và điều này phụ thuộc vào cấu trúc của từng chuẩn mã hóa.
+Mục tiêu của dự án không chỉ là "giải được" bài toán, mà là trả lời một câu hỏi nghiên cứu: **việc nén số lượng mệnh đề bằng biến phụ (auxiliary variables) có thực sự giúp bộ giải SAT nhanh hơn không?** Kết quả chính (trình bày đầy đủ trong báo cáo):
+
+- CNF nhỏ hơn **không** đồng nghĩa với giải nhanh hơn: Binomial (không biến phụ, nhiều mệnh đề nhất) nhanh nhất trên thứ tự gốc tới $N=100$ và không bao giờ timeout trên bất kỳ hoán vị nào.
+- Cả 5 encoding đều **đúng** và đều đạt **ACUP** (kiểm chứng tự động) — khác biệt về tốc độ không đến từ sức mạnh lan truyền.
+- Thời gian giải của CDCL **rất nhạy với thứ tự biến/mệnh đề**: ở $N=30$, độ chậm của Product, Binary, Commander giảm 1083×, 515×, 32× khi hoán vị CNF. Khác biệt thật chỉ xuất hiện ở $N$ lớn: tại $N=100$, Sequential/Binary/Product thất bại trên hầu hết hoán vị, còn Commander nhanh ngang Binomial.
 
 > 📄 **Báo cáo khoa học đầy đủ** (định dạng Elsevier `cas-sc`): [`report/main.pdf`](report/main.pdf)
 
@@ -39,9 +43,11 @@ Tất cả encoding SAT đều áp dụng thêm **phá đối xứng (symmetry b
 ## ⚙️ Đặc điểm kỹ thuật
 
 - **Đo lường tách bạch**: thời gian sinh mệnh đề (`Gen_Time`) và thời gian giải (`Solve_Time`) được đo riêng, dùng `time.perf_counter()` để đạt độ phân giải micro giây.
-- **Hậu kiểm nghiệm độc lập**: nghiệm của *toàn bộ* 9 phương pháp đều được kiểm chứng bằng một hàm dùng chung (đủ $N$ quân, không trùng hàng/cột/chéo).
+- **Hậu kiểm nghiệm độc lập**: nghiệm của *toàn bộ* 9 phương pháp đều được kiểm chứng bằng một hàm dùng chung (`src/verify.py`: đủ $N$ quân, không trùng hàng/cột/chéo).
+- **Kiểm chứng encoding**: test tự động duyệt vét cạn ngữ nghĩa AMO, kiểm tra ACUP, và so tập nghiệm của mọi encoding với brute-force cho $N \le 7$.
+- **Độ bền theo thứ tự đầu vào**: `src/robustness.py` giải mỗi encoding trên nhiều CNF hoán vị (đổi tên biến, xáo mệnh đề) để đo phân phối thời gian thay vì một lần chạy.
 - **Thống kê độ nhiễu**: kết quả ghi kèm độ lệch chuẩn và min/max qua nhiều lần lặp.
-- **Timeout an toàn**: cơ chế ngắt qua đa tiến trình (multiprocessing), tránh kẹt GIL trên Windows với các solver C-extension.
+- **Timeout an toàn**: cơ chế ngắt qua đa tiến trình (multiprocessing), tránh kẹt GIL trên Windows với các solver C-extension. Đồng hồ timeout chỉ bắt đầu sau khi CNF đã được nạp vào solver; TIMEOUT, UNSAT và lỗi được phân biệt rõ.
 - **So sánh công bằng**: mọi solver chạy đơn luồng; hỗ trợ chế độ `--first-solution` để MIP/CP dừng ngay tại nghiệm khả thi đầu tiên, ngang bằng tiêu chí dừng của SAT.
 
 ## 📁 Cấu trúc Dự án
@@ -56,6 +62,11 @@ NQueens_SAT_Project/
 │   ├── cplex_mip_solver.py # Tích hợp IBM CPLEX (MIP/ILP)
 │   ├── cplex_cp_solver.py  # Tích hợp IBM CPLEX CP Optimizer (tự dò engine)
 │   ├── gurobi_mip_solver.py # Tích hợp Gurobi (ILP)
+│   ├── verify.py           # Bộ kiểm nghiệm nghiệm dùng chung cho mọi phương pháp
+│   ├── verify_propagation.py # Kiểm chứng tính đúng AMO, ACUP và biến phụ của 5 encoding
+│   ├── robustness.py       # Đo độ nhạy thời gian giải với hoán vị CNF
+│   ├── noise_check.py      # Đo lặp CP-SAT, ghi thời gian từng lần chạy
+│   ├── plot_charts.py      # Vẽ toàn bộ biểu đồ từ CSV trong results/
 │   ├── visualize.py        # In bàn cờ N-Queens trực quan ra terminal
 │   └── benchmark.py        # Kịch bản chạy đo lường và vẽ biểu đồ tự động
 ├── results/            # Chứa file CSV và các biểu đồ PNG
@@ -107,6 +118,19 @@ python src/benchmark.py --sizes 30 --repeats 1 \
     --out cross_solver_benchmark.csv --no-append
 ```
 
+**Thí nghiệm độ bền theo thứ tự đầu vào** (seed 0 = CNF gốc):
+
+```bash
+python src/robustness.py --sizes 30 50 100 --seeds 10 --timeout 60
+```
+
+**Kiểm thử và kiểm chứng encoding:**
+
+```bash
+python -m unittest discover -s tests -v
+python src/verify_propagation.py
+```
+
 **Bước 3 (tùy chọn): Biên dịch báo cáo LaTeX**
 
 Báo cáo dùng template Elsevier `cas-sc`, biên dịch bằng **XeLaTeX** hoặc **Tectonic**:
@@ -117,7 +141,7 @@ xelatex main.tex && xelatex main.tex   # chạy 2 lần để cập nhật tham 
 # hoặc: tectonic -X compile report/main.tex --keep-logs
 ```
 
-> 📖 Các lưu ý kỹ thuật chi tiết (font Unicode, bundle Kissat trên Windows, cài đặt engine CPLEX-CP, license Gurobi) được trình bày trong [`docs/SETUP_CPLEX_CP.md`](docs/SETUP_CPLEX_CP.md) và phần phụ lục của báo cáo.
+> 📖 Hướng dẫn cài engine CPLEX CP Optimizer: xem [`docs/SETUP_CPLEX_CP.md`](docs/SETUP_CPLEX_CP.md).
 
 ## 📚 Kết quả & Thảo luận
 
