@@ -25,6 +25,23 @@ class TestNQueensSolvers(unittest.TestCase):
         self.assertIsNotNone(model)
         self.assertTrue(encoder.verify_solution(model, n=4))
 
+    def test_sat_solver_shuffled(self):
+        encoder = NQueensEncoder(n=8)
+        clauses, nvars = encoder.generate_clauses(enc_type="product")
+        solver = SATSolverWrapper(clauses, num_vars=nvars, seed=7)
+        is_sat, _ = solver.solve(solver_name="glucose3", time_limit_sec=10.0)
+        self.assertTrue(is_sat)
+        self.assertFalse(solver.timed_out)
+        self.assertTrue(encoder.verify_solution(solver.get_model(), n=8))
+
+    def test_sat_solver_timeout_flag(self):
+        clauses, _ = NQueensEncoder(n=30).generate_clauses(enc_type="product")
+        solver = SATSolverWrapper(clauses)
+        is_sat, solve_time = solver.solve(solver_name="glucose3", time_limit_sec=0.3)
+        self.assertFalse(is_sat)
+        self.assertTrue(solver.timed_out)
+        self.assertEqual(solve_time, 0.3)
+
     @unittest.skipIf(CPQueensSolver is None, "Chưa cài đặt OR-Tools (ortools)")
     def test_cp_sat_solver(self):
         solver = CPQueensSolver(n=4)
