@@ -1,5 +1,6 @@
 import math
 from pysat.card import CardEnc, EncType
+from verify import verify_sat_model
 
 PYSAT_ENCODINGS = {
     'binomial': EncType.pairwise,
@@ -24,7 +25,11 @@ PYSAT_ALL_ENCODINGS = {
 
 class PySatNQueensEncoder:
     def __init__(self, n: int, encoding: str = 'sequential', top_id: int = 0):
-        if encoding not in PYSAT_ENCODINGS:
+        if encoding in PYSAT_ENCODINGS:
+            self._enc_type = PYSAT_ENCODINGS[encoding]
+        elif encoding in PYSAT_ALL_ENCODINGS and encoding != 'native':
+            self._enc_type = PYSAT_ALL_ENCODINGS[encoding]
+        else:
             raise ValueError('Unknown encoding: ' + str(encoding))
         self.n = n
         self.encoding = encoding
@@ -41,7 +46,7 @@ class PySatNQueensEncoder:
         cnf = CardEnc.atmost(
             lits=lits,
             bound=1,
-            encoding=PYSAT_ENCODINGS[self.encoding],
+            encoding=self._enc_type,
             top_id=self.top_id,
         )
         return cnf.clauses, cnf.nv
@@ -51,20 +56,7 @@ class PySatNQueensEncoder:
         return [lits]
 
     def verify_solution(self, model, n: int) -> bool:
-        if not model:
-            return False
-        true_vars = {lit for lit in model if lit > 0}
-        queens = [((v - 1) // n, (v - 1) % n) for v in true_vars if 1 <= v <= n * n]
-
-        if len(queens) != n:
-            return False
-        rows = [r for r, _ in queens]
-        cols = [c for _, c in queens]
-        diag_main = [r - c for r, c in queens]
-        diag_anti = [r + c for r, c in queens]
-
-        return (len(set(rows)) == n and len(set(cols)) == n
-                and len(set(diag_main)) == n and len(set(diag_anti)) == n)
+        return verify_sat_model(model, n)
 
     def generate_clauses(self):
         clauses = []
