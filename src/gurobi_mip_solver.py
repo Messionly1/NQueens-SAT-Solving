@@ -1,6 +1,7 @@
 import time
 import gurobipy as gp
 from gurobipy import GRB
+from verify import is_valid_placement
 
 class GurobiMIPSolver:
     def __init__(self, n: int):
@@ -60,12 +61,7 @@ class GurobiMIPSolver:
         return self.solution
 
     def verify_solution(self) -> bool:
-        q = self.solution
-        if not q or len(q) != self.n:
-            return False
-        return (len(set(q)) == self.n
-                and len({q[i] - i for i in range(self.n)}) == self.n
-                and len({q[i] + i for i in range(self.n)}) == self.n)
+        return is_valid_placement(self.solution, self.n)
 
 if __name__ == "__main__":
     solver = GurobiMIPSolver(8)

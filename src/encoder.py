@@ -1,4 +1,5 @@
 import math
+from verify import verify_sat_model
 
 class NQueensEncoder:
     def __init__(self, n: int):
@@ -95,20 +96,7 @@ class NQueensEncoder:
         return clauses
 
     def verify_solution(self, model, n: int) -> bool:
-        if not model:
-            return False
-        true_vars = {lit for lit in model if lit > 0}
-        queens = [((v - 1) // n, (v - 1) % n) for v in true_vars if 1 <= v <= n * n]
-
-        if len(queens) != n:
-            return False
-        rows = [r for r, _ in queens]
-        cols = [c for _, c in queens]
-        diag_main = [r - c for r, c in queens]
-        diag_anti = [r + c for r, c in queens]
-
-        return (len(set(rows)) == n and len(set(cols)) == n
-                and len(set(diag_main)) == n and len(set(diag_anti)) == n)
+        return verify_sat_model(model, n)
 
     def generate_clauses(self, enc_type="binomial"):
         clauses = []
