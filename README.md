@@ -66,6 +66,7 @@ NQueens_SAT_Project/
 │   ├── verify_propagation.py # Kiểm chứng tính đúng AMO, ACUP và biến phụ của 5 encoding
 │   ├── robustness.py       # Đo độ nhạy thời gian giải với hoán vị CNF
 │   ├── noise_check.py      # Đo lặp CP-SAT, ghi thời gian từng lần chạy
+│   ├── solver_stats.py     # Ghi số nút nhánh Gurobi và thời gian engine CPLEX CP
 │   ├── plot_charts.py      # Vẽ toàn bộ biểu đồ từ CSV trong results/
 │   ├── visualize.py        # In bàn cờ N-Queens trực quan ra terminal
 │   └── benchmark.py        # Kịch bản chạy đo lường và vẽ biểu đồ tự động

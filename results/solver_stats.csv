@@ -1,0 +1,17 @@
+Board_Size,Solver,Wall_Time(s),Engine_Time(s),Node_Count,Sol_Count,Obj_Val,Obj_Bound,Solution_Valid,Error
+8,Gurobi-MIP,0.003434,0.002000,0,1,0.0,0.0,True,
+8,CPLEX-CP,0.248331,0.004,,,,,True,
+10,Gurobi-MIP,0.000254,0.000000,0,1,0.0,0.0,True,
+10,CPLEX-CP,0.015787,0.003,,,,,True,
+15,Gurobi-MIP,0.000225,0.000000,0,1,0.0,0.0,True,
+15,CPLEX-CP,0.015498,0.002,,,,,True,
+20,Gurobi-MIP,0.000265,0.000000,0,1,0.0,0.0,True,
+20,CPLEX-CP,0.014096,0.001,,,,,True,
+25,Gurobi-MIP,0.000291,0.001000,0,1,0.0,0.0,True,
+25,CPLEX-CP,0.015593,0.002,,,,,True,
+30,Gurobi-MIP,0.000519,0.001000,0,1,0.0,0.0,True,
+30,CPLEX-CP,0.015581,0.003,,,,,True,
+40,Gurobi-MIP,0.032012,0.032000,1,1,0.0,0.0,True,
+40,CPLEX-CP,0.015294,0.002,,,,,True,
+50,Gurobi-MIP,,,,,,,,GurobiError: Model too large for size-limited license; visit https://gurobi.com/unrestricted for more information
+50,CPLEX-CP,0.014803,0.002,,,,,True,
