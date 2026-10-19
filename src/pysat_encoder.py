@@ -27,7 +27,13 @@ class PySatNQueensEncoder:
     def __init__(self, n: int, encoding: str = 'sequential', top_id: int = 0):
         if encoding in PYSAT_ENCODINGS:
             self._enc_type = PYSAT_ENCODINGS[encoding]
-        elif encoding in PYSAT_ALL_ENCODINGS and encoding != 'native':
+        elif encoding in PYSAT_ALL_ENCODINGS:
+            if encoding == 'native':
+                raise ValueError(
+                    "'native' không dùng được với CardEnc.atmost: PySAT chỉ hỗ trợ "
+                    "native cho một số ràng buộc/bộ giải cụ thể. Hãy chọn encoder khác "
+                    "(ví dụ 'seqcounter' hoặc 'totalizer')."
+                )
             self._enc_type = PYSAT_ALL_ENCODINGS[encoding]
         else:
             raise ValueError('Unknown encoding: ' + str(encoding))
@@ -61,7 +67,7 @@ class PySatNQueensEncoder:
     def generate_clauses(self):
         clauses = []
         n = self.n
-        self.top_id = self.nvars
+        self.top_id = max(self.top_id, self.nvars)
 
         for r in range(n):
             lits = [self.var(r, c) for c in range(n)]

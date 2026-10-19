@@ -8,8 +8,8 @@ Dự án này là đồ án môn học nghiên cứu cách giải bài toán **N
 
 Mục tiêu của dự án không chỉ là "giải được" bài toán, mà là trả lời một câu hỏi nghiên cứu: **việc nén số lượng mệnh đề bằng biến phụ (auxiliary variables) có thực sự giúp bộ giải SAT nhanh hơn không?** Kết quả chính (trình bày đầy đủ trong báo cáo):
 
-- CNF nhỏ hơn **không** đồng nghĩa với giải nhanh hơn: Binomial (không biến phụ, nhiều mệnh đề nhất) nhanh nhất trên thứ tự gốc tới $N=100$ và không bao giờ timeout trên bất kỳ hoán vị nào.
-- Cả 5 encoding đều **đúng** và đều đạt **ACUP** (kiểm chứng tự động) — khác biệt về tốc độ không đến từ sức mạnh lan truyền.
+- CNF nhỏ hơn **không** đồng nghĩa với giải nhanh hơn: Binomial (không biến phụ, nhiều mệnh đề nhất) nhanh nhất trên thứ tự gốc tới $N=100$ và không timeout trong 10 thứ tự đã thử ở cả ba mốc $N=30,50,100$.
+- Cả 5 encoding đều **đúng** và đều đạt **ACUP** (chứng minh cho mọi kích thước trong báo cáo; kiểm chứng tự động với AMO trên $m = 2..16$ biến) — khác biệt về tốc độ không đến từ sức mạnh lan truyền.
 - Thời gian giải của CDCL **rất nhạy với thứ tự biến/mệnh đề**: ở $N=30$, độ chậm của Product, Binary, Commander giảm 1083×, 515×, 32× khi hoán vị CNF. Khác biệt thật chỉ xuất hiện ở $N$ lớn: tại $N=100$, Sequential/Binary/Product thất bại trên hầu hết hoán vị, còn Commander nhanh ngang Binomial.
 
 > 📄 **Báo cáo khoa học đầy đủ** (định dạng Elsevier `cas-sc`): [`report/main.pdf`](report/main.pdf)

@@ -41,7 +41,14 @@ def main():
                 times, n_timeout = [], 0
                 for seed in range(args.seeds):
                     solver = SATSolverWrapper(clauses, num_vars=num_vars, seed=seed)
-                    is_sat, t = solver.solve(args.solver, time_limit_sec=args.timeout)
+                    try:
+                        is_sat, t = solver.solve(args.solver, time_limit_sec=args.timeout)
+                    except RuntimeError as exc:
+                        writer.writerow([n, enc.capitalize(), args.solver, seed, num_vars, len(clauses),
+                                         '', 'ERROR: ' + str(exc), ''])
+                        f.flush()
+                        times.append(float('inf'))
+                        continue
                     if solver.timed_out:
                         status, valid = 'TIMEOUT', ''
                         n_timeout += 1

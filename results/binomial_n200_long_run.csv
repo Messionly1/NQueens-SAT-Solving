@@ -1,0 +1,2 @@
+Board_Size,Encoding,Solver,Seed,Variables,Clauses,Solve_Time(s),Status,Solution_Valid
+200,Binomial,glucose3,0,40000,13253700,300.000000,TIMEOUT,
